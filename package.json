@@ -1,0 +1,11 @@
+{
+  "name": "versand-prueba",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend local de prueba para los microservicios de Versand",
+  "scripts": {
+    "start": "node backend/start-services.js",
+    "service:operator": "node backend/service.js operator",
+    "service:buyer": "node backend/service.js buyer"
+  }
+}

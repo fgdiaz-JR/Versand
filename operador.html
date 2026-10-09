@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Versand | Operador</title>
+  <link rel="stylesheet" href="versand.css">
+</head>
+<body>
+  <div class="shell">
+    <!-- Barra lateral: navegación del operador y estado de servicios -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" id="logo"></span>
+        <span>Versand</span>
+      </div>
+      <span class="side-label">Operaciones</span>
+      <nav class="nav">
+        <button class="active">Dashboard</button>
+        <button>Entregas</button>
+        <button>Incidencias <span class="badge badge-danger" style="margin-left:auto">3</span></button>
+        <button>Finanzas / Escrow</button>
+        <button>Configuración</button>
+      </nav>
+      <div class="sidebar-footer">
+        Sistema operativo<br>
+        <strong style="color: #d5c5ff">Todos los servicios activos</strong>
+      </div>
+    </aside>
+
+    <section class="main">
+      <!-- Barra superior: contexto de operaciones y acciones globales -->
+      <header class="topbar">
+        <div class="topbar-title">
+          <b>Dashboard operativo</b>
+          <span>Visión general de tu operación · Miércoles, 8 oct 2026</span>
+        </div>
+        <div class="top-actions">
+          <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">☾</button>
+          <button class="icon-btn" aria-label="Notificaciones">♢</button>
+          <div class="avatar">OP</div>
+          <a class="btn btn-soft" href="index.html">Salir</a>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Encabezado de la página y botones de acción rápida -->
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Resumen ejecutivo</span>
+            <h1>Buenos días, equipo.</h1>
+            <p class="lead">El pulso de tus entregas y las decisiones que requieren atención.</p>
+          </div>
+          <div class="page-actions">
+            <button type="button" class="btn btn-soft">Exportar reporte</button>
+            <button type="button" class="btn btn-primary">Nueva guía</button>
+          </div>
+        </div>
+
+        <!-- Indicadores clave de rendimiento operativo (KPIs) -->
+        <div class="kpi-grid">
+          <article class="card kpi">
+            <span class="kpi-label">Entregas totales</span>
+            <div class="kpi-value">842</div>
+            <span class="trend up">12.8% vs. semana anterior</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Entregas a tiempo</span>
+            <div class="kpi-value">94.6%</div>
+            <span class="trend up">2.4% · meta: 92%</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Tiempo promedio</span>
+            <div class="kpi-value">2.8 <small>días</small></div>
+            <span class="trend down">0.3 días mejor que el mes pasado</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Incidencias abiertas</span>
+            <div class="kpi-value" style="color: var(--danger)">03</div>
+            <span class="trend down">1 crítica requiere acción</span>
+          </article>
+        </div>
+
+        <!-- Gráficos de analítica operativa -->
+        <div class="dashboard-grid">
+          <!-- Gráfico de barras: volumen semanal -->
+          <section class="card panel">
+            <div class="panel-head">
+              <div>
+                <h2>Volumen de entregas</h2>
+                <span class="muted">Comparativo de los últimos 7 días</span>
+              </div>
+              <select class="icon-btn" aria-label="Rango de fechas">
+                <option>Esta semana</option>
+                <option>Este mes</option>
+              </select>
+            </div>
+            <div class="chart">
+              <div class="bar-wrap"><div class="bar" style="--height:45%"></div><span>Lun</span></div>
+              <div class="bar-wrap"><div class="bar alt" style="--height:63%"></div><span>Mar</span></div>
+              <div class="bar-wrap"><div class="bar" style="--height:52%"></div><span>Mié</span></div>
+              <div class="bar-wrap"><div class="bar alt" style="--height:79%"></div><span>Jue</span></div>
+              <div class="bar-wrap"><div class="bar" style="--height:68%"></div><span>Vie</span></div>
+              <div class="bar-wrap"><div class="bar alt" style="--height:92%"></div><span>Sáb</span></div>
+              <div class="bar-wrap"><div class="bar" style="--height:74%"></div><span>Dom</span></div>
+            </div>
+            <div class="legend">
+              <span><i></i>Entregas completadas</span>
+              <span><i class="alt"></i>Meta diaria</span>
+            </div>
+          </section>
+
+          <!-- Gráfico de dona: distribución de estados -->
+          <section class="card panel">
+            <div class="panel-head">
+              <div>
+                <h2>Estado de pedidos</h2>
+                <span class="muted">Distribución actual</span>
+              </div>
+            </div>
+            <div class="donut-wrap">
+              <div class="donut"></div>
+              <div class="legend-list">
+                <div><span><i></i>Entregados</span><b>57% · 480</b></div>
+                <div><span><i style="background:var(--violet)"></i>En tránsito</span><b>21% · 177</b></div>
+                <div><span><i style="background:#f6b44d"></i>En reparto</span><b>13% · 109</b></div>
+                <div><span><i style="background:var(--line)"></i>Pendientes</span><b>9% · 76</b></div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Tabla de seguimiento de actividad reciente -->
+        <section class="card table-card">
+          <div class="panel-head" style="padding: 20px 20px 0; margin-bottom: 0">
+            <div>
+              <h2>Actividad reciente</h2>
+              <span class="muted">Últimos pedidos actualizados por el sistema</span>
+            </div>
+            <button type="button" class="btn btn-soft">Ver todos</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pedido</th>
+                  <th>Cliente</th>
+                  <th>Transportadora</th>
+                  <th>Estado</th>
+                  <th>Actualizado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>#MC-20481</td>
+                  <td>Laura Gómez</td>
+                  <td>Mercado Express</td>
+                  <td><span class="badge badge-warning">En reparto</span></td>
+                  <td>Hace 8 min</td>
+                  <td><button type="button" class="btn btn-soft">Abrir</button></td>
+                </tr>
+                <tr>
+                  <td>#MC-20479</td>
+                  <td>Andrés Rojas</td>
+                  <td>Ruta Segura</td>
+                  <td><span class="badge badge-success">Entregado</span></td>
+                  <td>Hace 21 min</td>
+                  <td><button type="button" class="btn btn-soft">Abrir</button></td>
+                </tr>
+                <tr>
+                  <td>#MC-20463</td>
+                  <td>Sofía Martínez</td>
+                  <td>Mercado Express</td>
+                  <td><span class="badge badge-danger">Incidencia</span></td>
+                  <td>Hace 23 min</td>
+                  <td><button type="button" class="btn btn-soft">Resolver</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <!-- Scripts base de la plataforma -->
+  <script src="versand-auth.js"></script>
+  <script src="versand-mvp.js"></script>
+
+  <!-- Lógica de vista: inicialización de interfaz y tema -->
+  <script>
+    document.querySelector("#logo").innerHTML = logo;
+    setupTheme();
+  </script>
+</body>
+</html>

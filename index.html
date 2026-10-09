@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Versand | Inicio de sesión</title>
+  <link rel="stylesheet" href="versand.css">
+</head>
+<body>
+  <div class="login">
+    <!-- Panel visual con identidad de marca e indicadores clave -->
+    <section class="login-visual">
+      <div class="brand">
+        <span class="brand-mark" id="visualLogo"></span>
+        <span>Versand</span>
+        <button type="button" class="mobile-login-toggle" id="mobileLoginToggle">Iniciar sesión</button>
+      </div>
+
+      <div class="visual-copy">
+        <span class="eyebrow" style="color: #d5c5ff">Centro de entregas</span>
+        <h1>Cada entrega cuenta una historia.</h1>
+        <p>Seguimiento, operación y decisiones logísticas en un solo lugar.</p>
+        <div class="visual-stats">
+          <div><strong>98.4%</strong><span>entregas a tiempo</span></div>
+          <div><strong>24/7</strong><span>trazabilidad activa</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel de autenticación y selección de entorno -->
+    <section class="login-panel">
+      <form id="loginForm" class="login-box">
+        <div class="brand">
+          <span class="brand-mark" id="formLogo"></span>
+          <span>Accede a tu espacio</span>
+        </div>
+        <h2>Bienvenido de nuevo</h2>
+        <p class="muted">Elige el perfil que necesitas. Cada perfil consulta un microservicio independiente.</p>
+
+        <!-- Selección de perfil / rol -->
+        <div class="role-cards">
+          <button type="button" class="role-card active" data-role="operations">
+            <b>Operador</b>
+            <span>Dashboard y control logístico</span>
+          </button>
+          <button type="button" class="role-card" data-role="buyer">
+            <b>Comprador</b>
+            <span>Pedidos y trazabilidad personal</span>
+          </button>
+        </div>
+
+        <!-- Campos de credenciales -->
+        <label class="field">
+          Correo electrónico
+          <input id="email" type="email" value="operaciones@versand.co" required>
+        </label>
+        <label class="field">
+          Contraseña
+          <input id="password" type="password" value="demo1234" required>
+        </label>
+
+        <button class="btn btn-primary login-submit" type="submit">Ingresar a mi espacio</button>
+
+        <div class="demo-note" id="serviceStatus">
+          Arquitectura demo: el inicio consulta el servicio de operador en el puerto 4001 o el servicio de comprador en el puerto 4002.
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <!-- Microservicio / lógica de autenticación base -->
+  <script src="versand-auth.js"></script>
+
+  <!-- Lógica de control de formulario, roles y redirección -->
+  <script>
+    // Inicialización del logotipo vectorial
+    document.querySelector("#visualLogo").innerHTML = logo;
+    document.querySelector("#formLogo").innerHTML = logo;
+
+    // Apertura del modal/panel de login en pantallas reducidas
+    const mobileLoginToggle = document.querySelector("#mobileLoginToggle");
+    mobileLoginToggle?.addEventListener("click", () => {
+      document.querySelector(".login").classList.add("is-login-open");
+    });
+
+    // Gestión del cambio de perfil y asignación de credenciales demo
+    let currentRole = "operations";
+    const roleButtons = document.querySelectorAll("[data-role]");
+    const emailInput = document.querySelector("#email");
+    const passwordInput = document.querySelector("#password");
+    const serviceStatus = document.querySelector("#serviceStatus");
+
+    roleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        currentRole = button.dataset.role;
+
+        roleButtons.forEach((item) => item.classList.toggle("active", item === button));
+
+        emailInput.value = currentRole === "operations"
+          ? "operaciones@versand.co"
+          : "laura.gomez@versand.co";
+      });
+    });
+
+    // Envío y autenticación contra el microservicio correspondiente
+    document.querySelector("#loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const result = await callAuthService(currentRole, {
+        email: emailInput.value,
+        password: passwordInput.value
+      });
+
+      if (result.serviceUnavailable) {
+        serviceStatus.textContent = "Microservicio no disponible: se habilitó la sesión demo local para continuar la validación.";
+      }
+
+      if (result.authenticated) {
+        window.location.href = currentRole === "operations" ? "operador.html" : "comprador.html";
+      }
+    });
+  </script>
+</body>
+</html>

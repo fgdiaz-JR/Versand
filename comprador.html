@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Versand | Comprador</title>
+  <link rel="stylesheet" href="versand.css">
+</head>
+<body>
+  <div class="shell">
+    <!-- Barra lateral: identidad de marca y navegación principal -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" id="logo"></span>
+        <span>Versand</span>
+      </div>
+      <span class="side-label">Comprador</span>
+      <nav class="nav">
+        <button class="active">Mis pedidos</button>
+        <button>Alertas</button>
+        <button>Ayuda y soporte</button>
+      </nav>
+      <div class="sidebar-footer">
+        Sistema operativo<br>
+        <strong style="color: #d5c5ff">Todos los servicios activos</strong>
+      </div>
+    </aside>
+
+    <section class="main">
+      <!-- Barra superior: contexto de vista y controles de usuario -->
+      <header class="topbar">
+        <div class="topbar-title">
+          <b>Mis pedidos</b>
+          <span>Seguimiento de tus compras · Miércoles, 8 oct 2026</span>
+        </div>
+        <div class="top-actions">
+          <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">☾</button>
+          <button class="icon-btn" aria-label="Notificaciones">♢</button>
+          <div class="avatar">LG</div>
+          <a class="btn btn-soft" href="index.html">Salir</a>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Saludo e introducción al espacio personal -->
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Mi espacio</span>
+            <h1>Hola, Laura.</h1>
+            <p class="lead">Sigue tus pedidos en tiempo real y mantente al tanto de cada movimiento.</p>
+          </div>
+        </div>
+
+        <!-- Formulario de búsqueda y filtrado de pedidos -->
+        <form id="trackForm" class="tracking-search">
+          <input 
+            id="trackInput" 
+            type="search"
+            aria-label="Número de pedido o guía" 
+            placeholder="Busca por número de pedido o guía, por ejemplo MCX-908172"
+          >
+          <button type="submit" class="btn btn-primary">Rastrear</button>
+        </form>
+
+        <!-- Indicadores clave de rendimiento (KPIs) del comprador -->
+        <div class="kpi-grid">
+          <article class="card kpi">
+            <span class="kpi-label">Pedidos activos</span>
+            <div class="kpi-value">02</div>
+            <span class="trend up">1 llega hoy</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Entregas completadas</span>
+            <div class="kpi-value">12</div>
+            <span class="trend up">100% recibidas</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Alertas</span>
+            <div class="kpi-value">03</div>
+            <span class="trend up">Correo y WhatsApp activos</span>
+          </article>
+          <article class="card kpi">
+            <span class="kpi-label">Puntos de confianza</span>
+            <div class="kpi-value">4.9</div>
+            <span class="trend up">Excelente historial</span>
+          </article>
+        </div>
+
+        <!-- Resumen destacado del próximo envío en ruta -->
+        <div class="delivery-highlight">
+          <div>
+            <span class="eyebrow">Próxima entrega</span>
+            <strong>Hoy, entre 4:00 y 6:00 PM</strong>
+            <span class="muted">La ventana se actualiza con cada evento logístico.</span>
+          </div>
+          <span class="badge badge-warning">En reparto</span>
+        </div>
+
+        <!-- Listado interactivo de pedidos -->
+        <section class="card panel orders-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Mis pedidos</h2>
+              <span class="muted">Selecciona un pedido para ver su seguimiento completo</span>
+            </div>
+            <span class="muted">2 pedidos</span>
+          </div>
+
+          <div class="order-list">
+            <!-- Pedido en curso -->
+            <article class="order-row" data-order="MC-20481">
+              <div class="order-summary">
+                <div class="order-id">#MC-20481</div>
+                <div class="order-product">Audífonos inalámbricos</div>
+                <div class="order-meta">Guía MCX-908172 · Actualizado hace 8 min</div>
+              </div>
+              <span class="badge badge-warning">En reparto</span>
+              <button type="button" class="btn btn-primary" data-order-detail>Ver detalle</button>
+            </article>
+
+            <!-- Pedido finalizado -->
+            <article class="order-row" data-order="MC-20397">
+              <div class="order-summary">
+                <div class="order-id">#MC-20397</div>
+                <div class="order-product">Kit de café artesanal</div>
+                <div class="order-meta">Prueba disponible · 2 oct 2026</div>
+              </div>
+              <span class="badge badge-success">Entregado</span>
+              <button type="button" class="btn btn-soft" id="proof">Ver prueba</button>
+            </article>
+          </div>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <!-- Scripts base de la plataforma -->
+  <script src="versand-auth.js"></script>
+  <script src="versand-mvp.js"></script>
+
+  <!-- Lógica de vista: inicialización, filtrado y modal de evidencia -->
+  <script>
+    // Inicialización de componentes visuales (logotipo y tema)
+    document.querySelector("#logo").innerHTML = logo;
+    setupTheme();
+
+    // Filtrado en tiempo real de filas de pedidos
+    const trackForm = document.querySelector("#trackForm");
+    const trackInput = document.querySelector("#trackInput");
+    const orderRows = document.querySelectorAll(".order-row");
+
+    trackForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const query = trackInput.value.toLowerCase().trim();
+
+      orderRows.forEach((row) => {
+        const matches = row.textContent.toLowerCase().includes(query);
+        row.hidden = query !== "" && !matches;
+      });
+
+      showToast(query ? "Resultados filtrados por tu búsqueda." : "Mostrando todos tus pedidos.");
+    });
+
+    // Despliegue del modal de prueba de entrega
+    document.querySelector("#proof").addEventListener("click", () => {
+      openModal(
+        "Prueba de entrega",
+        "La evidencia incluye fecha, hora, ubicación y registro fotográfico del pedido."
+      );
+    });
+  </script>
+</body>
+</html>

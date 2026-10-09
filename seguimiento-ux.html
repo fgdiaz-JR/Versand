@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Versand | Redireccionando</title>
+
+  <!-- Redirección declarativa inmediata y enlace canónico -->
+  <meta http-equiv="refresh" content="0; url=index.html">
+  <link rel="canonical" href="index.html">
+
+  <!-- Respaldo vía JS con reemplazo de historial para evitar bucles con el botón 'Atrás' -->
+  <script>
+    window.location.replace("index.html");
+  </script>
+</head>
+<body>
+  <!-- Contingencia accesible si el cliente bloquea la redirección automática -->
+  <p>Redirigiendo a Versand... Si no eres redirigido automáticamente, <a href="index.html">haz clic aquí</a>.</p>
+</body>
+</html>
