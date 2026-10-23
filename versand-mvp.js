@@ -89,6 +89,15 @@ function saveOrders(orders) {
   }
 }
 
+// Resuelve la API del rol actual. En Pages nunca debe apuntar al localhost
+// del navegador; en desarrollo usa las URLs locales de versand-config.js.
+function getVersandApiBase(role) {
+  const session = typeof getVersandSession === "function" ? getVersandSession() : null;
+  const base = session?.role === role ? session.apiBase : window.VERSAND_API_BASES?.[role];
+  if (!base) throw new Error(`No está configurado el servicio de ${role === "operations" ? "operador" : "comprador"}.`);
+  return base.replace(/\/+$/, "");
+}
+
 function cacheServiceOrders(orders) {
   saveOrders(orders.map((order) => ({
     id: order.id,
@@ -197,7 +206,7 @@ async function loadBuyerOrdersFromService() {
   const list = document.querySelector(".order-list");
   if (!list) return;
   try {
-    const response = await versandApiFetch("http://127.0.0.1:4002/api/buyer/dashboard");
+    const response = await versandApiFetch(`${getVersandApiBase("buyer")}/api/buyer/dashboard`);
     if (!response.ok) throw new Error("No se pudieron cargar los pedidos desde Seguimiento.");
     const { orders } = await response.json();
     cacheServiceOrders(orders);
@@ -240,10 +249,10 @@ async function loadOperatorDashboardFromService() {
   const tableBody = document.querySelector("table tbody");
   if (!tableBody) return;
   try {
-    const response = await versandApiFetch("http://127.0.0.1:4001/api/operator/dashboard");
+    const response = await versandApiFetch(`${getVersandApiBase("operations")}/api/operator/dashboard`);
     if (!response.ok) throw new Error("No se pudo cargar el panel operativo desde Seguimiento.");
     const dashboard = await response.json();
-    const ordersResponse = await versandApiFetch("http://127.0.0.1:4001/api/orders");
+    const ordersResponse = await versandApiFetch(`${getVersandApiBase("operations")}/api/orders`);
     if (!ordersResponse.ok) throw new Error("No se pudo sincronizar el catálogo de pedidos del operador.");
     cacheServiceOrders(await ordersResponse.json());
     tableBody.replaceChildren();
@@ -459,10 +468,10 @@ function openNewTrackingModal() {
   const orderSummary = backdrop.querySelector("#shippingOrderSummary");
   const trackingInput = backdrop.querySelector("#inputTracking");
   const feedback = backdrop.querySelector("#trackingValidationFeedback");
-  const port = 4001;
+  const apiBase = getVersandApiBase("operations");
   let paidOrders = [];
 
-  versandApiFetch(`http://127.0.0.1:${port}/api/operator/shipping-queue`)
+  versandApiFetch(`${apiBase}/api/operator/shipping-queue`)
     .then((response) => { if (!response.ok) throw new Error("No se pudieron consultar pedidos pagados."); return response.json(); })
     .then((orders) => {
       paidOrders = orders;
@@ -523,7 +532,7 @@ function openNewTrackingModal() {
     }
 
     try {
-      const response = await versandApiFetch(`http://127.0.0.1:${port}/api/orders/${encodeURIComponent(orderId)}/shipping`, {
+      const response = await versandApiFetch(`${apiBase}/api/orders/${encodeURIComponent(orderId)}/shipping`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tracking_number: trackingVal, carrier, sla_hours: carrier === "Mercado Express" ? 24 : carrier === "Ruta Segura" ? 48 : 72 })
@@ -555,10 +564,11 @@ function openNewTrackingModal() {
 async function openOrderDetail(orderId = "MC-20481") {
   const orders = getOrders();
   let order = orders.find((o) => o.id === orderId || o.tracking === orderId) || orders[0];
-  const port = window.location.pathname.toLowerCase().includes("operador") ? 4001 : 4002;
+  const apiRole = window.location.pathname.toLowerCase().includes("operador") ? "operations" : "buyer";
+  const apiBase = getVersandApiBase(apiRole);
   let events = [];
   try {
-    const response = await versandApiFetch(`http://127.0.0.1:${port}/api/orders/${encodeURIComponent(orderId)}`);
+    const response = await versandApiFetch(`${apiBase}/api/orders/${encodeURIComponent(orderId)}`);
     if (!response.ok) throw new Error("No se pudo consultar el pedido en el servicio de seguimiento.");
     const persisted = await response.json();
     order = {
@@ -737,7 +747,7 @@ async function openOrderDetail(orderId = "MC-20481") {
         context.font = `${Math.max(12, Math.round(canvas.width * 0.018))}px sans-serif`;
         context.fillText(`Pedido ${order.id} · Guía ${order.tracking}`, 14, canvas.height - 12);
         const imageData = canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.9);
-        const response = await versandApiFetch("http://127.0.0.1:4001/api/evidence/upload", {
+        const response = await versandApiFetch(`${getVersandApiBase("operations")}/api/evidence/upload`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ order_id: order.id, image_data: imageData, latitude, longitude,
             gps_accuracy_meters: position.coords.accuracy, timestamp_stamped: timestamp })
