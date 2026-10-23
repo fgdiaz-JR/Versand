@@ -13,11 +13,11 @@ const DEFAULT_ORDERS = [
     product: "Audífonos inalámbricos",
     status: "En reparto",
     destination: "Bogotá, Colombia",
-    address: "Calle 127 # 19-45, Apto 502",
+    address: "Cra. 6 #15-88, Museo del Oro, Bogotá",
     createdAt: "2026-10-06T09:42:00Z",
     dispatchedAt: "2026-10-07T07:25:00Z",
     transitHours: 24,
-    lastLocation: "Centro Norte, Bogotá",
+    lastLocation: "Centro Internacional, Bogotá",
     updated: "Hace 8 min"
   },
   {
@@ -28,7 +28,7 @@ const DEFAULT_ORDERS = [
     product: "Teclado mecánico RGB",
     status: "Entregado",
     destination: "Medellín, Colombia",
-    address: "Carrera 43A # 1 Sur-220",
+    address: "Carrera 52 #52-43, Museo de Antioquia, Medellín",
     createdAt: "2026-10-01T10:00:00Z",
     dispatchedAt: "2026-10-02T08:00:00Z",
     deliveredAt: "2 oct 2026 · 2:45 PM",
@@ -44,7 +44,7 @@ const DEFAULT_ORDERS = [
     product: "Kit de café artesanal",
     status: "Entregado",
     destination: "Bogotá, Colombia",
-    address: "Calle 127 # 19-45, Apto 502",
+    address: "Carrera 7 #28-66, Museo Nacional, Bogotá",
     createdAt: "2026-09-30T11:00:00Z",
     dispatchedAt: "2026-10-01T09:00:00Z",
     deliveredAt: "2 oct 2026 · 4:18 PM",
@@ -60,7 +60,7 @@ const DEFAULT_ORDERS = [
     product: "Monitor 27 pulgadas 4K",
     status: "Incidencia",
     destination: "Cali, Colombia",
-    address: "Avenida 6N # 28N-40",
+    address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
     createdAt: "2026-10-05T08:30:00Z",
     dispatchedAt: "2026-10-06T14:00:00Z",
     transitHours: 48,
@@ -68,6 +68,15 @@ const DEFAULT_ORDERS = [
     updated: "Hace 23 min"
   }
 ];
+
+// Puntos públicos reales usados como origen de las rutas de demostración.
+// El primer evento persistido sigue siendo la fuente principal cuando existe.
+const DEMO_ORIGINS = {
+  "MC-20481": "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
+  "MC-20397": "Cra. 6 #15-88, Museo del Oro, Bogotá",
+  "MC-20479": "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
+  "MC-20463": "Cra. 6 #15-88, Museo del Oro, Bogotá"
+};
 
 // Obtención del repositorio persistente de pedidos
 function getOrders() {
@@ -598,6 +607,9 @@ async function openOrderDetail(orderId = "MC-20481") {
     return;
   }
   const eta = calculateEstimatedDelivery(order);
+  const origin = events.find((event) => event.status === "Confirmado")?.location || DEMO_ORIGINS[order.id] || "Origen pendiente de confirmación";
+  const destination = [order.address, order.destination].filter(Boolean).join(", ");
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
   const timelineSteps = buildDynamicTimeline(order, events);
   const isDelivered = order.status === "Entregado";
 
@@ -677,15 +689,15 @@ async function openOrderDetail(orderId = "MC-20481") {
               <h3>Ubicación del envío</h3>
               <span class="muted">${escapeHtml(order.updated || "Actualizado recientemente")}</span>
             </div>
-            <div class="map-visual">
-              <span class="map-route"></span>
-              <span class="map-pin origin"></span>
-              <span class="map-pin current"></span>
-              <span class="map-pin destination"></span>
-              <div class="map-caption">
-                <span>Última ubicación: ${escapeHtml(order.lastLocation || "Hub Central")}</span>
-                <span>${escapeHtml(order.status)}</span>
-              </div>
+            <div class="route-card">
+              <div class="route-point"><span class="route-marker route-origin"></span><div><small>Sale de</small><strong>${escapeHtml(origin)}</strong></div></div>
+              <div class="route-connector"><span></span></div>
+              <div class="route-point"><span class="route-marker route-current"></span><div><small>Última ubicación · ${escapeHtml(order.status)}</small><strong>${escapeHtml(order.lastLocation || "Ubicación pendiente")}</strong></div></div>
+              <div class="route-connector"><span></span></div>
+              <div class="route-point"><span class="route-marker route-destination"></span><div><small>Entrega en</small><strong>${escapeHtml(destination || "Dirección pendiente")}</strong></div></div>
+              <div class="route-footer"><span>ETA estimada</span><strong>${escapeHtml(order.estimatedDelivery || eta)}</strong></div>
+              <a class="btn btn-soft route-directions" href="${escapeHtml(directionsUrl)}" target="_blank" rel="noopener noreferrer">Ver ruta en Google Maps ↗</a>
+              <small class="route-disclaimer">Direcciones públicas para demostración; no representan domicilios de clientes ni una ruta GPS en tiempo real.</small>
             </div>
           </div>
 

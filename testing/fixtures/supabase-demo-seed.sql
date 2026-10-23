@@ -11,6 +11,13 @@ VALUES
  ,('MC-20480','ORD-2026-8809',NULL,NULL,'buyer-001','Comprador Demo',NULL,'comprador.demo@versand.test','seller-880','Bogotá, Colombia','Dirección sintética demo 880','Paquete pendiente de despacho',87000,'Confirmado',24,NULL,NULL,'Pago confirmado · listo para despacho',NOW()-INTERVAL '2 hours')
 ON CONFLICT (id) DO NOTHING;
 
+-- Actualiza únicamente pedidos de demostración existentes para que el mapa
+-- use direcciones públicas colombianas, verificables y reconocibles.
+UPDATE public.orders SET destination_address='Cra. 6 #15-88, Museo del Oro, Bogotá', destination_city='Bogotá, Colombia', last_location='Centro Internacional, Bogotá' WHERE id='MC-20481';
+UPDATE public.orders SET destination_address='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', destination_city='Bogotá, Colombia', last_location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá' WHERE id='MC-20397';
+UPDATE public.orders SET destination_address='Carrera 52 #52-43, Museo de Antioquia, Medellín', destination_city='Medellín, Colombia' WHERE id='MC-20479';
+UPDATE public.orders SET destination_address='Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali', destination_city='Cali, Colombia' WHERE id='MC-20463';
+
 INSERT INTO public.tracking_events(order_id,tracking_number,status,location,checkpoint_note,source,signature_verified,idempotency_key,created_at)
 VALUES
 ('MC-20481','MCX-908172','Confirmado','Checkout demo','Pago sintético confirmado','system_event',TRUE,'demo:MC-20481:1',NOW()-INTERVAL '24 hours'),
@@ -26,6 +33,10 @@ VALUES
 ('MC-20463','MCX-907990','Incidencia','Portal PQR demo','PQR sintética con custodia congelada','system_event',TRUE,'demo:MC-20463:1',NOW()-INTERVAL '1 hour')
  ,('MC-20480',NULL,'Confirmado','Checkout demo','Pago sintético confirmado; pedido listo para asignación de guía.','system_event',TRUE,'demo:MC-20480:1',NOW()-INTERVAL '2 hours')
 ON CONFLICT (idempotency_key) DO NOTHING;
+
+UPDATE public.tracking_events SET location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', checkpoint_note='Origen de ruta de demostración; dirección pública del Museo Nacional de Colombia.' WHERE idempotency_key='demo:MC-20481:1';
+UPDATE public.tracking_events SET location='Cra. 6 #15-88, Museo del Oro, Bogotá', checkpoint_note='Origen de ruta de demostración; dirección pública del Museo del Oro.' WHERE idempotency_key='demo:MC-20397:1';
+UPDATE public.tracking_events SET location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', checkpoint_note='Entrega sintética en dirección pública del Museo Nacional de Colombia.' WHERE idempotency_key='demo:MC-20397:5';
 
 INSERT INTO public.escrow_vault(order_id,seller_id,retained_amount,status,retention_started_at,auto_release_at,released_at,dispute_id,dispute_reason,dispute_registered_at,accounting_notified)
 VALUES
