@@ -237,6 +237,8 @@ async function loadBuyerOrdersFromService() {
     if (count) count.textContent = `${orders.length} pedido${orders.length === 1 ? "" : "s"}`;
   } catch (error) {
     list.replaceChildren();
+    const count = document.querySelector(".orders-panel .panel-head > .muted");
+    if (count) count.textContent = "No disponible";
     const message = document.createElement("p");
     message.className = "muted";
     message.textContent = "No se pudieron cargar los pedidos desde el servicio de seguimiento.";
