@@ -39,7 +39,7 @@
           <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">☾</button>
           <button class="icon-btn" aria-label="Notificaciones">♢</button>
           <div class="avatar">OP</div>
-          <a class="btn btn-soft" href="index.html">Salir</a>
+          <a class="btn btn-soft" href="index.html" onclick="logoutVersand(); return false;">Salir</a>
         </div>
       </header>
 
@@ -185,7 +185,9 @@
   </div>
 
   <!-- Scripts base de la plataforma -->
+  <script src="versand-config.js"></script>
   <script src="versand-auth.js"></script>
+  <script>requireVersandSession("operations");</script>
   <script src="versand-mvp.js"></script>
 
   <!-- Lógica de vista: inicialización de interfaz y tema -->

@@ -52,23 +52,25 @@
         <!-- Campos de credenciales -->
         <label class="field">
           Correo electrónico
-          <input id="email" type="email" value="operaciones@versand.co" required>
+          <input id="email" type="email" autocomplete="username" placeholder="tu@correo.com" required>
         </label>
         <label class="field">
           Contraseña
-          <input id="password" type="password" value="demo1234" required>
+          <input id="password" type="password" autocomplete="current-password" placeholder="Contraseña" required>
         </label>
 
         <button class="btn btn-primary login-submit" type="submit">Ingresar a mi espacio</button>
 
         <div class="demo-note" id="serviceStatus">
-          Arquitectura demo: el inicio consulta el servicio de operador en el puerto 4001 o el servicio de comprador en el puerto 4002.
+          Acceso con correo y contraseña de Supabase Auth. Elige el perfil que corresponde a tu cuenta.
         </div>
+        <p class="muted" id="loginError" role="alert" aria-live="polite"></p>
       </form>
     </section>
   </div>
 
   <!-- Microservicio / lógica de autenticación base -->
+  <script src="versand-config.js"></script>
   <script src="versand-auth.js"></script>
 
   <!-- Lógica de control de formulario, roles y redirección -->
@@ -83,7 +85,7 @@
       document.querySelector(".login").classList.add("is-login-open");
     });
 
-    // Gestión del cambio de perfil y asignación de credenciales demo
+    // Selección del perfil de acceso
     let currentRole = "operations";
     const roleButtons = document.querySelectorAll("[data-role]");
     const emailInput = document.querySelector("#email");
@@ -96,9 +98,9 @@
 
         roleButtons.forEach((item) => item.classList.toggle("active", item === button));
 
-        emailInput.value = currentRole === "operations"
-          ? "operaciones@versand.co"
-          : "laura.gomez@versand.co";
+        emailInput.value = "";
+        passwordInput.value = "";
+        document.querySelector("#loginError").textContent = "";
       });
     });
 
@@ -106,17 +108,17 @@
     document.querySelector("#loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
 
+      serviceStatus.textContent = "Validando credenciales…";
       const result = await callAuthService(currentRole, {
         email: emailInput.value,
         password: passwordInput.value
       });
 
-      if (result.serviceUnavailable) {
-        serviceStatus.textContent = "Microservicio no disponible: se habilitó la sesión demo local para continuar la validación.";
-      }
-
       if (result.authenticated) {
         window.location.href = currentRole === "operations" ? "operador.html" : "comprador.html";
+      } else {
+        serviceStatus.textContent = "Ingresa con la cuenta asignada para el perfil seleccionado.";
+        document.querySelector("#loginError").textContent = result.message;
       }
     });
   </script>

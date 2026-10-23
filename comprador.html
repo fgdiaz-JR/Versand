@@ -37,7 +37,7 @@
           <button id="themeToggle" class="icon-btn" aria-label="Cambiar tema">☾</button>
           <button class="icon-btn" aria-label="Notificaciones">♢</button>
           <div class="avatar">LG</div>
-          <a class="btn btn-soft" href="index.html">Salir</a>
+          <a class="btn btn-soft" href="index.html" onclick="logoutVersand(); return false;">Salir</a>
         </div>
       </header>
 
@@ -135,7 +135,9 @@
   </div>
 
   <!-- Scripts base de la plataforma -->
+  <script src="versand-config.js"></script>
   <script src="versand-auth.js"></script>
+  <script>requireVersandSession("buyer");</script>
   <script src="versand-mvp.js"></script>
 
   <!-- Lógica de vista: inicialización, filtrado y modal de evidencia -->
@@ -147,13 +149,11 @@
     // Filtrado en tiempo real de filas de pedidos
     const trackForm = document.querySelector("#trackForm");
     const trackInput = document.querySelector("#trackInput");
-    const orderRows = document.querySelectorAll(".order-row");
-
     trackForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const query = trackInput.value.toLowerCase().trim();
 
-      orderRows.forEach((row) => {
+      document.querySelectorAll(".order-row").forEach((row) => {
         const matches = row.textContent.toLowerCase().includes(query);
         row.hidden = query !== "" && !matches;
       });
@@ -161,13 +161,6 @@
       showToast(query ? "Resultados filtrados por tu búsqueda." : "Mostrando todos tus pedidos.");
     });
 
-    // Despliegue del modal de prueba de entrega
-    document.querySelector("#proof").addEventListener("click", () => {
-      openModal(
-        "Prueba de entrega",
-        "La evidencia incluye fecha, hora, ubicación y registro fotográfico del pedido."
-      );
-    });
   </script>
 </body>
 </html>

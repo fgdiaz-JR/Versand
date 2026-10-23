@@ -1,8 +1,9 @@
 {
-  "name": "versand-prueba",
+  "name": "versand-seguimiento",
   "version": "1.0.0",
   "private": true,
-  "description": "Backend local de prueba para los microservicios de Versand",
+  "description": "Backend del módulo de seguimiento de Versand",
+  "engines": { "node": ">=18" },
   "scripts": {
     "start": "node backend/start-services.js",
     "service:operator": "node backend/service.js operator",

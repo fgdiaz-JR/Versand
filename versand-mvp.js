@@ -89,6 +89,24 @@ function saveOrders(orders) {
   }
 }
 
+function cacheServiceOrders(orders) {
+  saveOrders(orders.map((order) => ({
+    id: order.id,
+    tracking: order.tracking_number || "",
+    customer: order.customer_name || "",
+    carrier: order.carrier || "",
+    product: order.product_name || "",
+    status: order.status,
+    destination: order.destination_city || "",
+    address: order.destination_address || "",
+    createdAt: order.created_at,
+    estimatedDeliveryAt: order.estimated_delivery_at,
+    deliveredAt: order.delivered_at,
+    lastLocation: order.last_location,
+    updated: order.updated_at
+  })));
+}
+
 // Cálculo dinámico de fecha y ventana estimada de entrega (Sprint 2)
 function calculateEstimatedDelivery(order) {
   if (order.status === "Entregado") {
@@ -98,21 +116,32 @@ function calculateEstimatedDelivery(order) {
     return "Reprogramación estimada: 24h tras contacto con cliente";
   }
   if (order.status === "En reparto") {
-    return "Hoy, entre 4:00 y 6:00 PM (En ruta activa)";
+    if (!order.estimatedDeliveryAt) return "En reparto; ETA pendiente de actualización";
   }
+
+  if (!order.tracking || !order.carrier) return "Pendiente de asignación de transportadora";
 
   // Cálculo según SLA de transportadora y fecha de emisión
   const baseDate = new Date(order.createdAt || Date.now());
   const slaHours = order.carrier === "Mercado Express" ? 24 : order.carrier === "Ruta Segura" ? 48 : 72;
-  const etaDate = new Date(baseDate.getTime() + slaHours * 3600 * 1000);
+  const etaDate = new Date(order.estimatedDeliveryAt || baseDate.getTime() + slaHours * 3600 * 1000);
 
   const options = { weekday: "long", day: "numeric", month: "short" };
-  const formatted = etaDate.toLocaleDateString("es-ES", options);
-  return `${formatted}, entre 2:00 y 6:00 PM (SLA: ${slaHours}h)`;
+  const formatted = etaDate.toLocaleString("es-CO", options);
+  return `${formatted} (SLA: ${slaHours}h)`;
 }
 
 // Construcción 100% dinámica de la línea de tiempo por estados (Sprint 2)
-function buildDynamicTimeline(order) {
+function buildDynamicTimeline(order, events = []) {
+  if (events.length) {
+    const labels = { Confirmado: "Pedido confirmado", Preparado: "Preparado en bodega", "En tránsito": "En tránsito", "En reparto": "En reparto", Entregado: "Entregado", Incidencia: "Incidencia" };
+    return events.map((event, index) => ({
+      title: labels[event.status] || event.status,
+      time: new Date(event.created_at).toLocaleString("es-CO"),
+      note: [event.location, event.checkpoint_note].filter(Boolean).join(" · "),
+      status: index === events.length - 1 ? "current" : "done"
+    }));
+  }
   const steps = [
     { key: "confirmed", title: "Pedido confirmado", note: "Pago y orden validados correctamente", defaultTime: "3 oct · 9:42 AM" },
     { key: "prepared", title: "Preparado en bodega", note: `Empaquetado y rotulado con guía ${order.tracking}`, defaultTime: "3 oct · 2:15 PM" },
@@ -162,6 +191,96 @@ function showToast(message) {
   toast.textContent = message;
   document.body.append(toast);
   window.setTimeout(() => toast.remove(), 2800);
+}
+
+async function loadBuyerOrdersFromService() {
+  const list = document.querySelector(".order-list");
+  if (!list) return;
+  try {
+    const response = await versandApiFetch("http://127.0.0.1:4002/api/buyer/dashboard");
+    if (!response.ok) throw new Error("No se pudieron cargar los pedidos desde Seguimiento.");
+    const { orders } = await response.json();
+    cacheServiceOrders(orders);
+    list.replaceChildren();
+    for (const order of orders) {
+      const row = document.createElement("article");
+      row.className = "order-row";
+      row.dataset.order = order.id;
+      const summary = document.createElement("div");
+      summary.className = "order-summary";
+      const id = document.createElement("div"); id.className = "order-id"; id.textContent = `#${order.id}`;
+      const product = document.createElement("div"); product.className = "order-product"; product.textContent = order.product_name;
+      const meta = document.createElement("div"); meta.className = "order-meta";
+      meta.textContent = order.tracking_number ? `Guía ${order.tracking_number} · ${order.last_location || "Sin ubicación"}` : "Pendiente de asignación de guía";
+      summary.append(id, product, meta);
+      const badge = document.createElement("span");
+      badge.className = `badge ${order.status === "Entregado" ? "badge-success" : order.status === "Incidencia" ? "badge-danger" : "badge-warning"}`;
+      badge.textContent = order.status;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-primary";
+      button.dataset.orderDetail = "";
+      button.textContent = "Ver detalle";
+      row.append(summary, badge, button);
+      list.append(row);
+    }
+    const count = document.querySelector(".orders-panel .panel-head > .muted");
+    if (count) count.textContent = `${orders.length} pedido${orders.length === 1 ? "" : "s"}`;
+  } catch (error) {
+    list.replaceChildren();
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = "No se pudieron cargar los pedidos desde el servicio de seguimiento.";
+    list.append(message);
+    showToast(error.message);
+  }
+}
+
+async function loadOperatorDashboardFromService() {
+  const tableBody = document.querySelector("table tbody");
+  if (!tableBody) return;
+  try {
+    const response = await versandApiFetch("http://127.0.0.1:4001/api/operator/dashboard");
+    if (!response.ok) throw new Error("No se pudo cargar el panel operativo desde Seguimiento.");
+    const dashboard = await response.json();
+    const ordersResponse = await versandApiFetch("http://127.0.0.1:4001/api/orders");
+    if (!ordersResponse.ok) throw new Error("No se pudo sincronizar el catálogo de pedidos del operador.");
+    cacheServiceOrders(await ordersResponse.json());
+    tableBody.replaceChildren();
+    for (const activity of dashboard.recentActivity) {
+      const row = document.createElement("tr");
+      const values = [activity.id, activity.customer, activity.carrier || "Pendiente", activity.status,
+        activity.updated ? new Date(activity.updated).toLocaleString("es-CO") : ""];
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = value || "";
+        row.append(cell);
+      }
+      const actionCell = document.createElement("td");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-soft";
+      button.textContent = activity.status === "Incidencia" ? "Resolver" : "Abrir";
+      actionCell.append(button);
+      row.append(actionCell);
+      tableBody.append(row);
+    }
+    const incidentValue = document.querySelectorAll(".kpi-grid .kpi-value")[3];
+    if (incidentValue) incidentValue.textContent = String(dashboard.kpis.openIncidents);
+  } catch (error) {
+    tableBody.replaceChildren();
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.textContent = "No se pudieron cargar las actividades desde el servicio de seguimiento.";
+    row.append(cell);
+    tableBody.append(row);
+    showToast(error.message);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 }
 
 // Modal genérico
@@ -236,98 +355,62 @@ function generateBarcodeSVG(code) {
   return `<svg viewBox="0 0 ${Math.max(x + 10, 220)} 55" xmlns="http://www.w3.org/2000/svg">${bars}</svg>`;
 }
 
-// Impresión y generación de etiqueta de envío PDF en menos de 2s (Sprint 2)
+function createShippingLabelPdf(order, eta) {
+  const normalize = (value) => String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E]/g, "?");
+  const lines = [
+    ["VERSAND LOGISTICS HUB", 20, 390, 16],
+    [order.carrier || "Transportadora", 20, 364, 12],
+    ["ETIQUETA DE ENVIO", 20, 333, 10],
+    ["GUIA", 20, 299, 9],
+    [order.tracking || order.tracking_number || "PENDIENTE", 20, 278, 18],
+    ["DESTINATARIO", 20, 239, 9],
+    [order.customer || order.customer_name || "Comprador", 20, 220, 12],
+    [order.address || order.destination_address || "Direccion pendiente", 20, 202, 10],
+    [order.destination || order.destination_city || "Ciudad pendiente", 20, 185, 10],
+    ["PEDIDO", 20, 153, 9],
+    [`#${order.id || order.order_number || ""}`, 20, 135, 12],
+    ["PRODUCTO", 20, 110, 9],
+    [order.product || order.product_name || "Producto", 20, 92, 10],
+    ["ENTREGA ESTIMADA", 20, 62, 9],
+    [eta || "Pendiente", 20, 44, 10],
+    ["Centro Logistico Versand - Bogota D.C.", 20, 20, 7]
+  ];
+  const commands = lines.map(([text, x, y, size]) => `BT /F1 ${size} Tf ${x} ${y} Td (${normalize(text).replace(/[\\()]/g, "\\$&")}) Tj ET`).join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 288 432] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+    `<< /Length ${commands.length} >>\nstream\n${commands}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => { pdf += `${String(offset).padStart(10, "0")} 00000 n \n`; });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+// Descarga automática de etiqueta PDF en menos de 2s (HU-02)
 function printShippingLabel(orderId) {
   const tStart = performance.now();
   const orders = getOrders();
   const order = orders.find((o) => o.id === orderId || o.tracking === orderId) || orders[0];
+  if (!order) { showToast("No se encontró el pedido para generar la etiqueta."); return; }
   const eta = calculateEstimatedDelivery(order);
-
-  const backdrop = document.createElement("div");
-  backdrop.className = "modal-backdrop order-detail-backdrop";
-  backdrop.innerHTML = `
-    <div class="modal label-modal" role="dialog" aria-modal="true" aria-labelledby="label-title">
-      <button type="button" class="modal-close" aria-label="Cerrar">×</button>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="label-title">Etiqueta oficial de envío</h2>
-        <span class="perf-badge" id="perfCounter">Generando...</span>
-      </div>
-      <p class="muted">Documento logístico listo para despacho y verificación en ruta.</p>
-
-      <!-- Contenedor imprimible de la etiqueta -->
-      <article class="shipping-label" id="printableShippingLabel">
-        <header class="label-header">
-          <div>
-            <span class="eyebrow">VERSAND LOGISTICS HUB</span>
-            <div class="label-carrier">${order.carrier || "Mercado Express"}</div>
-          </div>
-          <span class="label-service">EXPRESS PRIORITARIO</span>
-        </header>
-
-        <section class="label-section">
-          <strong>Remitente</strong>
-          Centro Logístico Versand · Cra. 68D # 25B-86, Bogotá D.C. · Bodega Central 04
-        </section>
-
-        <section class="label-section">
-          <strong>Destinatario</strong>
-          <b style="font-size:14px">${order.customer}</b><br>
-          ${order.address || "Calle 127 # 19-45, Apto 502"}<br>
-          ${order.destination || "Bogotá, Colombia"}
-        </section>
-
-        <div class="label-barcode-box">
-          ${generateBarcodeSVG(order.tracking)}
-          <div class="label-barcode-text">${order.tracking}</div>
-        </div>
-
-        <footer class="label-footer-grid">
-          <div>
-            <strong>Pedido</strong>
-            <b>#${order.id}</b>
-          </div>
-          <div>
-            <strong>Producto</strong>
-            ${order.product}
-          </div>
-          <div>
-            <strong>Peso estimado</strong>
-            1.25 kg
-          </div>
-          <div>
-            <strong>Entrega estimada</strong>
-            ${eta}
-          </div>
-        </footer>
-      </article>
-
-      <div class="modal-actions" style="margin-top:20px">
-        <button type="button" class="btn btn-soft" data-close-label>Cerrar</button>
-        <button type="button" class="btn btn-primary" id="btnExecutePrint">
-          🖨️ Imprimir / Guardar como PDF
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.append(backdrop);
-
-  // Medición de rendimiento (Criterio: Generación PDF < 2s)
+  const pdf = createShippingLabelPdf(order, eta);
+  const url = URL.createObjectURL(pdf);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `etiqueta-${String(order.tracking || order.tracking_number || order.id).replace(/[^a-z0-9_-]/gi, "-")}.pdf`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
   const elapsedSeconds = ((performance.now() - tStart) / 1000).toFixed(3);
-  const perfBadge = backdrop.querySelector("#perfCounter");
-  if (perfBadge) {
-    perfBadge.textContent = `⚡ Generado en ${elapsedSeconds}s (< 2s)`;
-  }
-
-  const close = () => backdrop.remove();
-  backdrop.querySelector(".modal-close").addEventListener("click", close);
-  backdrop.querySelector("[data-close-label]").addEventListener("click", close);
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
-
-  backdrop.querySelector("#btnExecutePrint").addEventListener("click", () => {
-    window.print();
-    showToast(`Etiqueta lista para guardar como PDF (${elapsedSeconds}s).`);
-  });
+  showToast(`Descarga de etiqueta PDF iniciada en ${elapsedSeconds}s.`);
 }
 
 // Modal para asociar nueva guía con validación de unicidad en tiempo real (Sprint 2)
@@ -337,13 +420,14 @@ function openNewTrackingModal() {
   backdrop.innerHTML = `
     <form class="modal" id="newTrackingForm" style="width:min(520px, 100%)">
       <button type="button" class="modal-close" aria-label="Cerrar">×</button>
-      <h2>Asociar nueva guía de envío</h2>
-      <p class="muted">Registra una guía única para habilitar el rastreo, línea de tiempo e impresión de etiqueta.</p>
-
-      <label class="field">
-        Número de pedido
-        <input name="orderId" id="inputOrderId" required placeholder="Ej: MC-20495" value="MC-${Math.floor(10000 + Math.random() * 90000)}">
+      <h2>Asignar envío a pedido pagado</h2>
+      <p class="muted">Selecciona un pedido confirmado por el Equipo 8 y registra su guía.</p>
+      <label class="field">Pedido pagado
+        <select name="orderId" id="inputOrderId" required style="width:100%;height:46px;margin-top:7px;padding:0 13px;border:1px solid var(--line);border-radius:10px;background:var(--surface)">
+          <option value="">Cargando pedidos…</option>
+        </select>
       </label>
+      <div id="shippingOrderSummary" class="muted" style="margin:8px 0 14px"></div>
 
       <label class="field">
         Número de guía (debe ser única)
@@ -360,24 +444,9 @@ function openNewTrackingModal() {
         </select>
       </label>
 
-      <label class="field">
-        Nombre del cliente / Destinatario
-        <input name="customer" id="inputCustomer" required placeholder="Ej: Carlos Mendoza">
-      </label>
-
-      <label class="field">
-        Producto a transportar
-        <input name="product" id="inputProduct" required placeholder="Ej: Tablet 10 pulgadas">
-      </label>
-
-      <label class="field">
-        Dirección de entrega
-        <input name="address" id="inputAddress" placeholder="Ej: Cra. 7 # 72-41, Bogotá" value="Carrera 15 # 93-60, Bogotá">
-      </label>
-
       <div class="modal-actions">
         <button type="button" class="btn btn-soft" data-cancel-btn>Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="btnSubmitTracking">Validar y asociar guía</button>
+        <button type="submit" class="btn btn-primary" id="btnSubmitTracking">Asignar guía</button>
       </div>
     </form>
   `;
@@ -386,8 +455,28 @@ function openNewTrackingModal() {
 
   const close = () => backdrop.remove();
   const form = backdrop.querySelector("#newTrackingForm");
+  const orderSelect = backdrop.querySelector("#inputOrderId");
+  const orderSummary = backdrop.querySelector("#shippingOrderSummary");
   const trackingInput = backdrop.querySelector("#inputTracking");
   const feedback = backdrop.querySelector("#trackingValidationFeedback");
+  const port = 4001;
+  let paidOrders = [];
+
+  versandApiFetch(`http://127.0.0.1:${port}/api/operator/shipping-queue`)
+    .then((response) => { if (!response.ok) throw new Error("No se pudieron consultar pedidos pagados."); return response.json(); })
+    .then((orders) => {
+      paidOrders = orders;
+      orderSelect.innerHTML = orders.length
+        ? '<option value="">Selecciona un pedido</option>' + orders.map((order) => `<option value="${escapeHtml(order.id)}">${escapeHtml(order.id)} · ${escapeHtml(order.customer_name || "Cliente")} · ${escapeHtml(order.product_name || "Pedido")}</option>`).join("")
+        : '<option value="">No hay pedidos pagados pendientes de guía</option>';
+      orderSelect.disabled = !orders.length;
+    })
+    .catch(() => { orderSelect.innerHTML = '<option value="">No se pudo cargar la cola de envíos</option>'; orderSelect.disabled = true; });
+
+  orderSelect.addEventListener("change", () => {
+    const order = paidOrders.find((item) => item.id === orderSelect.value);
+    orderSummary.textContent = order ? `${order.customer_name || ""} · ${order.destination_address || "Dirección no disponible"}` : "";
+  });
 
   backdrop.querySelector(".modal-close").addEventListener("click", close);
   backdrop.querySelector("[data-cancel-btn]").addEventListener("click", close);
@@ -417,12 +506,11 @@ function openNewTrackingModal() {
   // Envío del formulario
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const orderId = form.orderId.value.trim().toUpperCase();
+    const orderId = form.orderId.value.trim();
     const trackingVal = form.tracking.value.trim().toUpperCase();
     const carrier = form.carrier.value;
-    const customer = form.customer.value.trim();
-    const product = form.product.value.trim();
-    const address = form.address.value.trim();
+    const order = paidOrders.find((item) => item.id === orderId);
+    if (!order) { showToast("Selecciona un pedido pagado pendiente de envío."); return; }
 
     // Verificación estricta de unicidad
     const validation = validateTrackingUnique(trackingVal);
@@ -434,65 +522,71 @@ function openNewTrackingModal() {
       return;
     }
 
-    // Nuevo pedido enriquecido
-    const newOrder = {
-      id: orderId,
-      tracking: trackingVal,
-      carrier,
-      customer,
-      product,
-      address,
-      destination: "Bogotá, Colombia",
-      status: "En tránsito",
-      createdAt: new Date().toISOString(),
-      updated: "Hace un momento",
-      lastLocation: "Hub Central Versand"
-    };
-
-    // Guardado en el almacén de pedidos
-    const orders = getOrders();
-    orders.unshift(newOrder);
-    saveOrders(orders);
-
-    // Intento opcional de sincronización con backend
     try {
-      fetch("http://localhost:4001/api/orders", {
+      const response = await versandApiFetch(`http://127.0.0.1:${port}/api/orders/${encodeURIComponent(orderId)}/shipping`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newOrder)
-      }).catch(() => {});
-    } catch (_) {}
-
-    close();
-    showToast(`✅ Guía ${trackingVal} validada como única y asociada a ${orderId}.`);
-
-    // Inserción dinámica en la tabla si nos encontramos en operador.html
-    const tableBody = document.querySelector("table tbody");
-    if (tableBody) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>#${newOrder.id}</td>
-        <td>${newOrder.customer}</td>
-        <td>${newOrder.carrier}</td>
-        <td><span class="badge badge-warning">En tránsito</span></td>
-        <td>Hace un momento</td>
-        <td><button type="button" class="btn btn-soft" data-open-order="${newOrder.id}">Abrir</button></td>
-      `;
-      tableBody.prepend(tr);
-      tr.querySelector("button").addEventListener("click", () => openOrderDetail(newOrder.id));
+        body: JSON.stringify({ tracking_number: trackingVal, carrier, sla_hours: carrier === "Mercado Express" ? 24 : carrier === "Ruta Segura" ? 48 : 72 })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "No se pudo asignar la guía.");
+      const persisted = result.order;
+      const newOrder = {
+        id: persisted.id, tracking: persisted.tracking_number, carrier: persisted.carrier,
+        customer: persisted.customer_name, product: persisted.product_name,
+        address: persisted.destination_address, destination: persisted.destination_city,
+        status: persisted.status, createdAt: persisted.created_at, updated: "Hace un momento",
+        lastLocation: persisted.last_location
+      };
+      const current = getOrders().filter((item) => item.id !== newOrder.id);
+      current.unshift(newOrder);
+      saveOrders(current);
+      close();
+      showToast(`Guía ${trackingVal} asignada a ${orderId}.`);
+      await loadOperatorDashboardFromService();
+      printShippingLabel(newOrder.id);
+    } catch (error) {
+      showToast(`No se asignó la guía: ${error.message}`);
     }
-
-    // Ofrecer inmediatamente impresión de la etiqueta PDF en < 2s
-    printShippingLabel(newOrder.id);
   });
 }
 
 // Despliegue de seguimiento con línea de tiempo 100% dinámica (Sprint 2)
-function openOrderDetail(orderId = "MC-20481") {
+async function openOrderDetail(orderId = "MC-20481") {
   const orders = getOrders();
-  const order = orders.find((o) => o.id === orderId || o.tracking === orderId) || orders[0];
+  let order = orders.find((o) => o.id === orderId || o.tracking === orderId) || orders[0];
+  const port = window.location.pathname.toLowerCase().includes("operador") ? 4001 : 4002;
+  let events = [];
+  try {
+    const response = await versandApiFetch(`http://127.0.0.1:${port}/api/orders/${encodeURIComponent(orderId)}`);
+    if (!response.ok) throw new Error("No se pudo consultar el pedido en el servicio de seguimiento.");
+    const persisted = await response.json();
+    order = {
+      ...order,
+      id: persisted.id,
+      tracking: persisted.tracking_number || "Pendiente",
+      customer: persisted.customer_name,
+      carrier: persisted.carrier || "Pendiente de asignación",
+      product: persisted.product_name,
+      status: persisted.status,
+      destination: persisted.destination_city,
+      address: persisted.destination_address,
+      createdAt: persisted.created_at,
+      estimatedDeliveryAt: persisted.estimated_delivery_at,
+      deliveredAt: persisted.delivered_at,
+      lastLocation: persisted.last_location,
+      evidence: persisted.evidence,
+      escrow: persisted.escrow,
+      updated: persisted.updated_at ? new Date(persisted.updated_at).toLocaleString("es-CO") : "",
+      estimatedDelivery: persisted.estimatedDelivery
+    };
+    events = persisted.events || [];
+  } catch (error) {
+    showToast(error.message);
+    return;
+  }
   const eta = calculateEstimatedDelivery(order);
-  const timelineSteps = buildDynamicTimeline(order);
+  const timelineSteps = buildDynamicTimeline(order, events);
   const isDelivered = order.status === "Entregado";
 
   const backdrop = document.createElement("div");
@@ -505,11 +599,11 @@ function openOrderDetail(orderId = "MC-20481") {
       <div class="order-detail-header">
         <div>
           <span class="eyebrow">Seguimiento en tiempo real · Sprint 2</span>
-          <h2 id="order-detail-title">#${order.id}</h2>
-          <p>${order.product} · Guía <b>${order.tracking}</b></p>
+          <h2 id="order-detail-title">#${escapeHtml(order.id)}</h2>
+          <p>${escapeHtml(order.product)} · Guía <b>${escapeHtml(order.tracking)}</b></p>
         </div>
         <span class="badge ${isDelivered ? "badge-success" : order.status === "Incidencia" ? "badge-danger" : "badge-warning"}">
-          ${order.status}
+          ${escapeHtml(order.status)}
         </span>
       </div>
 
@@ -519,7 +613,7 @@ function openOrderDetail(orderId = "MC-20481") {
           <!-- Cálculo dinámico de fecha estimada -->
           <div class="detail-eta">
             <span class="muted">${isDelivered ? "Fecha de entrega" : "Entrega estimada calculada dinámicamente"}</span>
-            <strong>${eta}</strong>
+            <strong>${escapeHtml(order.estimatedDelivery || eta)}</strong>
           </div>
 
           <!-- Línea de tiempo 100% dinámica -->
@@ -530,9 +624,9 @@ function openOrderDetail(orderId = "MC-20481") {
                 <div class="step ${step.status}">
                   <div class="dot"></div>
                   <div>
-                    <p class="step-title">${step.title}</p>
-                    <span class="step-time">${step.time}</span>
-                    ${step.note ? `<p class="step-note">${step.note}</p>` : ""}
+                    <p class="step-title">${escapeHtml(step.title)}</p>
+                    <span class="step-time">${escapeHtml(step.time)}</span>
+                    ${step.note ? `<p class="step-note">${escapeHtml(step.note)}</p>` : ""}
                   </div>
                 </div>
               `).join("")}
@@ -542,11 +636,26 @@ function openOrderDetail(orderId = "MC-20481") {
           <!-- Datos de entrega -->
           <div class="detail-section">
             <h3>Información de entrega</h3>
-            <div class="info-row"><span>Cliente</span><strong>${order.customer}</strong></div>
-            <div class="info-row"><span>Transportadora</span><strong>${order.carrier}</strong></div>
-            <div class="info-row"><span>Dirección</span><strong>${order.address || "Dirección registrada"}</strong></div>
-            <div class="info-row"><span>Destino</span><strong>${order.destination || "Bogotá, Colombia"}</strong></div>
+            <div class="info-row"><span>Cliente</span><strong>${escapeHtml(order.customer)}</strong></div>
+            <div class="info-row"><span>Transportadora</span><strong>${escapeHtml(order.carrier)}</strong></div>
+            <div class="info-row"><span>Dirección</span><strong>${escapeHtml(order.address || "Dirección registrada")}</strong></div>
+            <div class="info-row"><span>Destino</span><strong>${escapeHtml(order.destination || "Bogotá, Colombia")}</strong></div>
           </div>
+
+          ${order.escrow?.found ? `
+          <div class="detail-section">
+            <h3>Protección del pago</h3>
+            <div class="info-row"><span>Estado</span><strong>${escapeHtml(order.escrow.status)}</strong></div>
+            <div class="info-row"><span>Liberación estimada</span><strong>${escapeHtml(order.escrow.remainingFormatted || "Pendiente")}</strong></div>
+          </div>` : ""}
+
+          ${order.evidence ? `
+          <div class="detail-section">
+            <h3>Prueba de entrega</h3>
+            <img src="${escapeHtml(order.evidence.image_url)}" alt="Evidencia de entrega" style="width:100%;border-radius:12px">
+            <p class="step-note">GPS ${escapeHtml(order.evidence.latitude)}, ${escapeHtml(order.evidence.longitude)} · ${escapeHtml(order.evidence.timestamp_stamped)}</p>
+            <p class="step-note">Huella SHA-256: ${escapeHtml(order.evidence.hash_integrity)}</p>
+          </div>` : ""}
         </div>
 
         <!-- Columna de ubicación y acciones de etiqueta -->
@@ -554,7 +663,7 @@ function openOrderDetail(orderId = "MC-20481") {
           <div class="detail-section">
             <div class="detail-section-heading">
               <h3>Ubicación del envío</h3>
-              <span class="muted">${order.updated || "Actualizado recientemente"}</span>
+              <span class="muted">${escapeHtml(order.updated || "Actualizado recientemente")}</span>
             </div>
             <div class="map-visual">
               <span class="map-route"></span>
@@ -562,15 +671,17 @@ function openOrderDetail(orderId = "MC-20481") {
               <span class="map-pin current"></span>
               <span class="map-pin destination"></span>
               <div class="map-caption">
-                <span>Última ubicación: ${order.lastLocation || "Hub Central"}</span>
-                <span>${order.status}</span>
+                <span>Última ubicación: ${escapeHtml(order.lastLocation || "Hub Central")}</span>
+                <span>${escapeHtml(order.status)}</span>
               </div>
             </div>
           </div>
 
           <button type="button" class="btn btn-primary" id="btnDetailPrintLabel" style="width:100%; margin-top:14px">
-            🖨️ Imprimir Etiqueta PDF (< 2s)
+            Descargar etiqueta PDF (< 2s)
           </button>
+          ${window.location.pathname.toLowerCase().includes("operador") && order.status === "En reparto" && !order.evidence ? `
+          <button type="button" class="btn btn-soft" id="btnDeliveryEvidence" style="width:100%; margin-top:10px">📍 Registrar evidencia GPS</button>` : ""}
           <button type="button" class="btn btn-soft detail-support">
             Necesito ayuda con este pedido
           </button>
@@ -588,6 +699,59 @@ function openOrderDetail(orderId = "MC-20481") {
   // Botón para imprimir la etiqueta oficial en PDF
   backdrop.querySelector("#btnDetailPrintLabel").addEventListener("click", () => {
     printShippingLabel(order.id);
+  });
+
+  backdrop.querySelector("#btnDeliveryEvidence")?.addEventListener("click", () => {
+    const picker = document.createElement("input");
+    picker.type = "file";
+    picker.accept = "image/jpeg,image/png";
+    picker.onchange = async () => {
+      const file = picker.files?.[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) { showToast("La foto debe pesar como máximo 10 MB."); return; }
+      if (!navigator.geolocation) { showToast("Este navegador no ofrece ubicación GPS."); return; }
+      try {
+        const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 }));
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const timestamp = new Date().toISOString();
+        const image = await new Promise((resolve, reject) => {
+          const objectUrl = URL.createObjectURL(file);
+          const element = new Image();
+          element.onload = () => { URL.revokeObjectURL(objectUrl); resolve(element); };
+          element.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("No se pudo leer la imagen.")); };
+          element.src = objectUrl;
+        });
+        const scale = Math.min(1, 1600 / Math.max(image.width, image.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const bandHeight = Math.max(72, Math.round(canvas.width * 0.075));
+        context.fillStyle = "rgba(0,0,0,0.72)";
+        context.fillRect(0, canvas.height - bandHeight, canvas.width, bandHeight);
+        context.fillStyle = "#fff";
+        context.font = `bold ${Math.max(14, Math.round(canvas.width * 0.025))}px sans-serif`;
+        context.fillText(`${timestamp} · GPS ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`, 14, canvas.height - Math.round(bandHeight * 0.4));
+        context.font = `${Math.max(12, Math.round(canvas.width * 0.018))}px sans-serif`;
+        context.fillText(`Pedido ${order.id} · Guía ${order.tracking}`, 14, canvas.height - 12);
+        const imageData = canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.9);
+        const response = await versandApiFetch("http://127.0.0.1:4001/api/evidence/upload", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order_id: order.id, image_data: imageData, latitude, longitude,
+            gps_accuracy_meters: position.coords.accuracy, timestamp_stamped: timestamp })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "No se pudo guardar la evidencia.");
+        showToast("Evidencia GPS guardada y protegida con huella SHA-256.");
+        close();
+        await openOrderDetail(order.id);
+      } catch (error) {
+        showToast(`No se pudo registrar la evidencia: ${error.message || "revisa el permiso GPS"}`);
+      }
+    };
+    picker.click();
   });
 
   // Botón de soporte
@@ -615,30 +779,21 @@ function exportActivity() {
 
 // Inicialización de interacciones de la aplicación
 function setupMvpInteractions() {
-  // Apertura de detalles al hacer clic en filas de pedidos
-  document.querySelectorAll(".order-row[data-order]").forEach((row) => {
-    row.addEventListener("click", (event) => {
-      if (event.target.closest("button")) return;
-      openOrderDetail(row.dataset.order);
-    });
+  if (window.location.pathname.toLowerCase().includes("operador")) void loadOperatorDashboardFromService();
+  else void loadBuyerOrdersFromService();
+  // Delegación para pedidos iniciales y filas cargadas desde el backend.
+  document.querySelector(".order-list")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-order-detail]");
+    const row = event.target.closest(".order-row[data-order]");
+    if (button && row) void openOrderDetail(row.dataset.order);
+    else if (row && !event.target.closest("button")) void openOrderDetail(row.dataset.order);
   });
 
-  // Botones "Ver detalle" específicos
-  document.querySelectorAll("[data-order-detail]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const orderId = btn.closest("[data-order]")?.dataset.order;
-      openOrderDetail(orderId);
-    });
-  });
-
-  // Botones de la tabla en operador
-  document.querySelectorAll("table tbody tr").forEach((tr) => {
-    const orderCell = tr.querySelector("td:first-child");
-    const orderId = orderCell?.textContent.replace("#", "").trim();
-    const actionBtn = tr.querySelector("button");
-    if (actionBtn && orderId) {
-      actionBtn.addEventListener("click", () => openOrderDetail(orderId));
-    }
+  // Delegación para la tabla estática o cargada por el servicio.
+  document.querySelector("table tbody")?.addEventListener("click", (event) => {
+    if (!event.target.closest("button")) return;
+    const orderId = event.target.closest("tr")?.querySelector("td:first-child")?.textContent.replace("#", "").trim();
+    if (orderId) void openOrderDetail(orderId);
   });
 
   // Botón de "Nueva guía" -> Abre modal con validación de unicidad e impresión de PDF
