@@ -1,0 +1,56 @@
+# Blueprint: dos servicios Node para el frontend alojado en GitHub Pages.
+# Al crear el Blueprint, Render pedirá los valores sync:false en su Dashboard.
+services:
+  - type: web
+    name: versand-seguimiento-operator-fgdia-jr
+    runtime: node
+    buildCommand: npm install --omit=dev
+    startCommand: npm run service:operator
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VERSAND_BIND_HOST
+        value: 0.0.0.0
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://fgdia-jr.github.io
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_EVIDENCE_BUCKET
+        value: delivery-evidence
+      - key: CARRIER_WEBHOOK_SECRET
+        sync: false
+      - key: INTEGRATION_SHARED_SECRET
+        sync: false
+
+  - type: web
+    name: versand-seguimiento-buyer-fgdia-jr
+    runtime: node
+    buildCommand: npm install --omit=dev
+    startCommand: npm run service:buyer
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VERSAND_BIND_HOST
+        value: 0.0.0.0
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://fgdia-jr.github.io
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_EVIDENCE_BUCKET
+        value: delivery-evidence
+      - key: CARRIER_WEBHOOK_SECRET
+        sync: false
+      - key: INTEGRATION_SHARED_SECRET
+        sync: false

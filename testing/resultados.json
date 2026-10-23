@@ -1,0 +1,72 @@
+[
+  {
+    "id": "01-roles",
+    "title": "Autenticación y aislamiento por rol",
+    "ok": true,
+    "detail": "Comprador: 2 pedidos propios. Operador: 4 pedidos visibles. Ambos perfiles Supabase autenticados.",
+    "date": "22/10/2026, 8:23:36 p. m."
+  },
+  {
+    "id": "02-timeline",
+    "title": "Línea de tiempo y ETA (HU-01)",
+    "ok": true,
+    "detail": "4 eventos; estado En reparto; ETA: jue, 22 de oct, 10:31 p. m. (SLA: 24h).",
+    "date": "22/10/2026, 8:23:36 p. m."
+  },
+  {
+    "id": "03-unique-guide",
+    "title": "Guía única y conflicto por duplicado (HU-02)",
+    "ok": true,
+    "detail": "Guía demo repetida rechazada; guía TST-G-TSTMVKADK4UA asignada al pedido temporal TST-MVKADK4U-A.",
+    "date": "22/10/2026, 8:23:38 p. m."
+  },
+  {
+    "id": "04-webhook",
+    "title": "HMAC, historial e idempotencia (HU-04)",
+    "ok": true,
+    "detail": "Firma inválida: HTTP 401. Firma válida: HTTP 200. Reenvío: HTTP 200, eventos sin duplicar.",
+    "date": "22/10/2026, 8:23:40 p. m."
+  },
+  {
+    "id": "05-push-queue",
+    "title": "Cola de notificación Push",
+    "ok": true,
+    "detail": "Evento encolado con estado PENDING. No se declara entrega externa; no hay proveedor del Equipo 3 conectado.",
+    "date": "22/10/2026, 8:23:40 p. m."
+  },
+  {
+    "id": "06-pqr-freeze",
+    "title": "PQR congela fondos y crea evento contable (HU-03)",
+    "ok": true,
+    "detail": "Custodia FROZEN_DISPUTE; FundsFrozen en outbox PENDING.",
+    "date": "22/10/2026, 8:23:41 p. m."
+  },
+  {
+    "id": "07-escrow-release",
+    "title": "Retención de 72 h y liberación automática (HU-03)",
+    "ok": true,
+    "detail": "Entrega inició RETAINED; vencimiento sintético aplicado al pedido temporal; estado final RELEASED; FundsReleased en outbox.",
+    "date": "22/10/2026, 8:23:44 p. m."
+  },
+  {
+    "id": "08-evidence",
+    "title": "Foto sintética, marca GPS, hash y acceso firmado (HU-06)",
+    "ok": true,
+    "detail": "HTTP 201; carga 0.46s (< 3s: true); hash SHA-256 presente; URL privada visible al comprador.",
+    "date": "22/10/2026, 8:23:46 p. m."
+  },
+  {
+    "id": "09-pdf-download",
+    "title": "Descarga automática de etiqueta PDF (HU-02)",
+    "ok": true,
+    "detail": "Archivo generado: etiqueta-MCX-908172.pdf. Cabecera PDF correcta; descarga iniciada desde la vista del pedido.",
+    "date": "22/10/2026, 8:24:00 p. m."
+  },
+  {
+    "id": "10-ui-roles-pdf-evidence",
+    "title": "Vistas autenticadas y evidencia mostrada",
+    "ok": true,
+    "detail": "Dashboard comprador con 6 pedidos; operador con 8; pedido con evidencia visible y PDF descargado.",
+    "date": "22/10/2026, 8:24:04 p. m."
+  }
+]

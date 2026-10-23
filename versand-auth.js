@@ -11,6 +11,9 @@ function getVersandSession() {
 async function callAuthService(role, credentials) {
   const base = services[role];
   if (!base) return { authenticated: false, message: "Perfil de acceso inválido." };
+  if (!/^https:\/\//i.test(base) && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    return { authenticated: false, message: "Falta configurar la URL HTTPS del servicio en versand-config.js." };
+  }
   try {
     const response = await fetch(`${base}/api/auth/${role === "operations" ? "operator" : "buyer"}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(credentials)

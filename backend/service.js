@@ -5,12 +5,12 @@ const db = require("./supabase-client");
 const role = process.argv[2];
 const configuration = {
   operator: {
-    port: Number(process.env.VERSAND_OPERATOR_PORT || 4001),
+    port: Number(process.env.PORT || process.env.VERSAND_OPERATOR_PORT || 4001),
     path: "/api/auth/operator",
     user: { id: "op-001", name: "Equipo Versand", email: "operaciones@versand.co", role: "operator" }
   },
   buyer: {
-    port: Number(process.env.VERSAND_BUYER_PORT || 4002),
+    port: Number(process.env.PORT || process.env.VERSAND_BUYER_PORT || 4002),
     path: "/api/auth/buyer",
     user: { id: "buyer-001", name: "Laura Gómez", email: "laura.gomez@versand.co", role: "buyer" }
   }

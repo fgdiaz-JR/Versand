@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Validación de flujos — Versand</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f3f5fb;color:#172033;font:16px/1.5 system-ui,Segoe UI,sans-serif}
+    main{max-width:1024px;margin:42px auto;padding:0 24px}.brand{color:#6544c0;font-weight:800;letter-spacing:.12em;font-size:13px}
+    h1{margin:8px 0 4px;font-size:30px} .sub{color:#62708a;margin:0 0 22px}
+    article{background:white;border:1px solid #e4e8f1;border-radius:18px;padding:26px;box-shadow:0 10px 32px #19234212}
+    .row{display:flex;gap:12px;align-items:center}.pill{border-radius:99px;padding:5px 12px;font-weight:750;font-size:12px;letter-spacing:.04em}
+    .ok{background:#e4f7ef;color:#147748}.fail{background:#ffeded;color:#b42318}.neutral{background:#edf0f7;color:#546078}
+    .case{color:#73819a;font-size:13px;text-transform:uppercase;letter-spacing:.11em;font-weight:700;margin-top:20px}
+    .detail{background:#f7f8fc;border-radius:10px;padding:14px;margin-top:18px;white-space:pre-wrap;font:14px/1.6 ui-monospace,Consolas,monospace;color:#34415b}
+    footer{margin-top:22px;color:#7b879d;font-size:12px}
+  </style>
+</head>
+<body><main>
+  <div class="brand">VERSAND · QA LOCAL</div><h1>Validación de flujos internos</h1>
+  <p class="sub">Ejecución sobre servicios locales conectados a Supabase · datos temporales sintéticos</p>
+  <article id="result"><div class="row"><span class="pill neutral">CARGANDO</span><b>Preparando resultado…</b></div></article>
+  <footer>Las capturas documentan resultados de validación manual automatizada. Las cuentas, pedidos y fotos usadas son de prueba.</footer>
+</main><script>
+  const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const all = JSON.parse(localStorage.getItem("versand.testing.results") || "[]");
+  const id = new URLSearchParams(location.search).get("case");
+  const item = all.find(row => row.id === id);
+  const root = document.querySelector("#result");
+  if (item) root.innerHTML = `<div class="row"><span class="pill ${item.ok ? "ok" : "fail"}">${item.ok ? "APROBADO" : "FALLÓ"}</span><b>${escapeHtml(item.title)}</b></div><div class="case">${escapeHtml(item.id)} · ${escapeHtml(item.date)}</div><div class="detail">${escapeHtml(item.detail)}</div>`;
+  else root.innerHTML = `<div class="row"><span class="pill neutral">SIN DATOS</span><b>No hay resultado para esta validación.</b></div>`;
+</script></body></html>

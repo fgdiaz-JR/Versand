@@ -3,14 +3,9 @@ node_modules/
 .env.*
 !.env.example
 backend/local_db.json
-database/local_test_data.sqlite
-database/local_test_data.sql
-/database/seed.sql
-/database/*.md
-/backend/provision-demo-users.js
+/testing/fixtures/local_test_data.sqlite
 /.agents/
 /skills-lock.json
-/testing/
 /DIAGNOSTICO_Y_PLAN_ACCION.md
 /*sprint*.jpg
 /complementar.jpg
