@@ -3,7 +3,9 @@
 services:
   - type: web
     name: versand-seguimiento-operator-fgdia-jr
+    repo: https://github.com/fgdiaz-JR/Versand
     runtime: node
+    plan: free
     buildCommand: npm install --omit=dev
     startCommand: npm run service:operator
     healthCheckPath: /api/health
@@ -14,7 +16,7 @@ services:
       - key: VERSAND_BIND_HOST
         value: 0.0.0.0
       - key: CORS_ALLOWED_ORIGINS
-        value: https://fgdia-jr.github.io
+        value: https://fgdiaz-jr.github.io
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -30,7 +32,9 @@ services:
 
   - type: web
     name: versand-seguimiento-buyer-fgdia-jr
+    repo: https://github.com/fgdiaz-JR/Versand
     runtime: node
+    plan: free
     buildCommand: npm install --omit=dev
     startCommand: npm run service:buyer
     healthCheckPath: /api/health
@@ -41,7 +45,7 @@ services:
       - key: VERSAND_BIND_HOST
         value: 0.0.0.0
       - key: CORS_ALLOWED_ORIGINS
-        value: https://fgdia-jr.github.io
+        value: https://fgdiaz-jr.github.io
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
