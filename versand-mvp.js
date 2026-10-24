@@ -146,7 +146,7 @@ function calculateEstimatedDelivery(order) {
   const etaDate = new Date(order.estimatedDeliveryAt || baseDate.getTime() + slaHours * 3600 * 1000);
 
   const options = { weekday: "long", day: "numeric", month: "short" };
-  const formatted = etaDate.toLocaleString("es-CO", options);
+  const formatted = etaDate.toLocaleString("es-CO", { ...options, timeZone: "America/Bogota" });
   return `${formatted} (SLA: ${slaHours}h)`;
 }
 
@@ -156,7 +156,7 @@ function buildDynamicTimeline(order, events = []) {
     const labels = { Confirmado: "Pedido confirmado", Preparado: "Preparado en bodega", "En tránsito": "En tránsito", "En reparto": "En reparto", Entregado: "Entregado", Incidencia: "Incidencia" };
     return events.map((event, index) => ({
       title: labels[event.status] || event.status,
-      time: new Date(event.created_at).toLocaleString("es-CO"),
+      time: new Date(event.created_at).toLocaleString("es-CO", { timeZone: "America/Bogota" }),
       note: [event.location, event.checkpoint_note].filter(Boolean).join(" · "),
       status: index === events.length - 1 ? "current" : "done"
     }));
@@ -612,8 +612,8 @@ async function openOrderDetail(orderId = "MC-20481") {
   const destination = [order.address, order.destination].filter(Boolean).join(", ");
   const departureEvent = events.find((event) => event.status === "En tránsito");
   const departureLabel = departureEvent?.created_at
-    ? new Date(departureEvent.created_at).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
-    : order.dispatchedAt ? new Date(order.dispatchedAt).toLocaleString("es-CO") : "Pendiente";
+    ? new Date(departureEvent.created_at).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
+    : order.dispatchedAt ? new Date(order.dispatchedAt).toLocaleString("es-CO", { timeZone: "America/Bogota" }) : "Pendiente";
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
   const timelineSteps = buildDynamicTimeline(order, events);
   const isDelivered = order.status === "Entregado";

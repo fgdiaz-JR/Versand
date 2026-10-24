@@ -49,7 +49,7 @@ function calculateEstimatedDelivery(order) {
   const deliveryDate = new Date(order.estimated_delivery_at || baseDate.getTime() + slaHours * 3600 * 1000);
 
   const options = { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
-  const dateStr = deliveryDate.toLocaleDateString("es-CO", options);
+  const dateStr = deliveryDate.toLocaleDateString("es-CO", { ...options, timeZone: "America/Bogota" });
   return `${dateStr} (SLA: ${slaHours}h)`;
 }
 
