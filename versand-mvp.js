@@ -642,7 +642,7 @@ async function openOrderDetail(orderId = "MC-20481") {
           <!-- Cálculo dinámico de fecha estimada -->
           <div class="detail-eta">
             <span class="muted">${isDelivered ? "Fecha de entrega" : "Entrega estimada calculada dinámicamente"}</span>
-            <strong>${escapeHtml(order.estimatedDelivery || eta)}</strong>
+            <strong>${escapeHtml(eta)}</strong>
           </div>
 
           <!-- Línea de tiempo 100% dinámica -->
@@ -701,7 +701,7 @@ async function openOrderDetail(orderId = "MC-20481") {
               <div class="route-connector"><span></span></div>
               <div class="route-point"><span class="route-marker route-destination"></span><div><small>Entrega en</small><strong>${escapeHtml(destination || "Dirección pendiente")}</strong></div></div>
               <div class="route-footer"><span>Fecha de salida</span><strong>${escapeHtml(departureLabel)}</strong></div>
-              <div class="route-footer"><span>ETA estimada</span><strong>${escapeHtml(order.estimatedDelivery || eta)}</strong></div>
+              <div class="route-footer"><span>ETA estimada</span><strong>${escapeHtml(eta)}</strong></div>
               <a class="btn btn-soft route-directions" href="${escapeHtml(directionsUrl)}" target="_blank" rel="noopener noreferrer">Ver ruta en Google Maps ↗</a>
               <small class="route-disclaimer">Direcciones públicas para demostración; no representan domicilios de clientes ni una ruta GPS en tiempo real.</small>
             </div>
