@@ -14,9 +14,11 @@ const DEFAULT_ORDERS = [
     status: "En tránsito",
     destination: "Cali, Colombia",
     address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
-    createdAt: "2026-10-23T12:00:00Z",
-    dispatchedAt: "2026-10-23T14:00:00Z",
-    estimatedDeliveryAt: "2026-10-24T14:00:00Z",
+    createdAt: "2026-10-23T22:00:00Z",
+    dispatchedAt: "2026-10-23T22:00:00Z",
+    estimatedDeliveryAt: "2026-10-24T06:27:15Z",
+    estimatedRouteDurationSeconds: 30435,
+    estimatedRouteDistanceMeters: 394700,
     transitHours: 24,
     lastLocation: "Bogotá · en ruta hacia Cali",
     updated: "Hace 8 min"
@@ -36,6 +38,24 @@ const DEFAULT_ORDERS = [
     transitHours: 48,
     lastLocation: "Poblado, Medellín",
     updated: "Hace 21 min"
+  },
+  {
+    id: "MC-20501",
+    tracking: "MCX-908201",
+    customer: "Laura Gómez",
+    carrier: "Coordinadora",
+    product: "Artesanías nariñenses (pedido demo)",
+    status: "En tránsito",
+    destination: "Cali, Colombia",
+    address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
+    createdAt: "2026-10-23T22:30:00Z",
+    dispatchedAt: "2026-10-23T23:00:00Z",
+    estimatedDeliveryAt: "2026-10-24T07:01:16Z",
+    estimatedRouteDurationSeconds: 28876,
+    estimatedRouteDistanceMeters: 461536,
+    transitHours: 24,
+    lastLocation: "Pasto · salió hacia Cali",
+    updated: "23 oct 2026"
   },
   {
     id: "MC-20397",
@@ -76,7 +96,8 @@ const DEMO_ORIGINS = {
   "MC-20481": "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
   "MC-20397": "Cra. 6 #15-88, Museo del Oro, Bogotá",
   "MC-20479": "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
-  "MC-20463": "Cra. 6 #15-88, Museo del Oro, Bogotá"
+  "MC-20463": "Cra. 6 #15-88, Museo del Oro, Bogotá",
+  "MC-20501": "Carrera 6 #16D-50, Terminal de Transportes de Pasto, Pasto"
 };
 
 // Obtención del repositorio persistente de pedidos
@@ -611,6 +632,15 @@ async function openOrderDetail(orderId = "MC-20481") {
   const origin = events.find((event) => event.status === "Confirmado")?.location || DEMO_ORIGINS[order.id] || "Origen pendiente de confirmación";
   const destination = [order.address, order.destination].filter(Boolean).join(", ");
   const departureEvent = events.find((event) => event.status === "En tránsito");
+  const routeMeta = departureEvent?.raw_payload || {};
+  const routeDurationSeconds = Number(routeMeta.route_duration_seconds || order.estimatedRouteDurationSeconds) || null;
+  const routeDistanceMeters = Number(routeMeta.route_distance_meters || order.estimatedRouteDistanceMeters) || null;
+  const routeDurationText = routeDurationSeconds
+    ? `${Math.floor(routeDurationSeconds / 3600)} h ${Math.round((routeDurationSeconds % 3600) / 60)} min`
+    : "Pendiente de cálculo";
+  const routeDistanceText = routeDistanceMeters
+    ? `${(routeDistanceMeters / 1000).toLocaleString("es-CO", { maximumFractionDigits: 1 })} km`
+    : "";
   const departureLabel = departureEvent?.created_at
     ? new Date(departureEvent.created_at).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
     : order.dispatchedAt ? new Date(order.dispatchedAt).toLocaleString("es-CO", { timeZone: "America/Bogota" }) : "Pendiente";
@@ -701,9 +731,10 @@ async function openOrderDetail(orderId = "MC-20481") {
               <div class="route-connector"><span></span></div>
               <div class="route-point"><span class="route-marker route-destination"></span><div><small>Entrega en</small><strong>${escapeHtml(destination || "Dirección pendiente")}</strong></div></div>
               <div class="route-footer"><span>Fecha de salida</span><strong>${escapeHtml(departureLabel)}</strong></div>
+              <div class="route-footer"><span>Tiempo estimado de carretera</span><strong>${escapeHtml(routeDurationText)}${routeDistanceText ? ` · ${escapeHtml(routeDistanceText)}` : ""}</strong></div>
               <div class="route-footer"><span>ETA estimada</span><strong>${escapeHtml(eta)}</strong></div>
               <a class="btn btn-soft route-directions" href="${escapeHtml(directionsUrl)}" target="_blank" rel="noopener noreferrer">Ver ruta en Google Maps ↗</a>
-              <small class="route-disclaimer">Direcciones públicas para demostración; no representan domicilios de clientes ni una ruta GPS en tiempo real.</small>
+              <small class="route-disclaimer">Estimación OSRM sobre vías OpenStreetMap, sin tráfico en vivo. Lugares públicos de demostración; no representa una ubicación GPS en tiempo real.</small>
             </div>
           </div>
 

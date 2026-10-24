@@ -54,10 +54,10 @@ const DEFAULT_SEED = {
       total_amount: 320000.00,
       status: "En tránsito",
       sla_hours: 24,
-      estimated_delivery_at: "2026-10-24T14:00:00.000Z",
+      estimated_delivery_at: "2026-10-24T06:27:15.000Z",
       delivered_at: null,
       last_location: "Bogotá · en ruta hacia Cali",
-      created_at: "2026-10-23T12:00:00.000Z",
+      created_at: "2026-10-23T21:30:00.000Z",
       updated_at: new Date(Date.now() - 45 * 60 * 1000).toISOString()
     },
     {
@@ -81,6 +81,27 @@ const DEFAULT_SEED = {
       last_location: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
       created_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
       updated_at: new Date(Date.now() - 20 * 3600 * 1000).toISOString()
+    },
+    {
+      id: "MC-20501",
+      order_number: "ORD-2026-9021",
+      tracking_number: "MCX-908201",
+      carrier: "Coordinadora",
+      customer_id: "buyer-001",
+      customer_name: "Laura Gómez",
+      customer_email: "comprador.demo@versand.test",
+      seller_id: "seller-330",
+      destination_city: "Cali, Colombia",
+      destination_address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
+      product_name: "Artesanías nariñenses (pedido demo)",
+      total_amount: 245000,
+      status: "En tránsito",
+      sla_hours: 24,
+      estimated_delivery_at: "2026-10-24T07:01:16.000Z",
+      delivered_at: null,
+      last_location: "Pasto · salió hacia Cali",
+      created_at: "2026-10-23T22:30:00.000Z",
+      updated_at: "2026-10-24T00:15:00.000Z"
     },
     {
       id: "MC-20479",
@@ -137,7 +158,7 @@ const DEFAULT_SEED = {
       checkpoint_note: "Origen de ruta de demostración; dirección pública del Museo Nacional de Colombia.",
       source: "system_event",
       signature_verified: true,
-      created_at: "2026-10-23T12:00:00.000Z"
+      created_at: "2026-10-23T21:30:00.000Z"
     },
     {
       id: "evt-002",
@@ -148,7 +169,7 @@ const DEFAULT_SEED = {
       checkpoint_note: "Etiqueta generada e impresa en menos de 2s. Rotulado oficial (Equipo 1)",
       source: "manual",
       signature_verified: true,
-      created_at: "2026-10-23T13:00:00.000Z"
+      created_at: "2026-10-23T21:45:00.000Z"
     },
     {
       id: "evt-003",
@@ -156,10 +177,11 @@ const DEFAULT_SEED = {
       tracking_number: "MCX-908172",
       status: "En tránsito",
       location: "Hub Regional Fontibón",
-      checkpoint_note: "Despachado en camión hacia estación local",
+      checkpoint_note: "Despacho hacia Cali. Estimación por carretera OSRM: 8 h 27 min, 394,7 km; sin tráfico en vivo.",
+      raw_payload: { route_duration_seconds: 30435, route_distance_meters: 394700, route_provider: "OSRM / OpenStreetMap" },
       source: "carrier_webhook",
       signature_verified: true,
-      created_at: "2026-10-23T14:00:00.000Z"
+      created_at: "2026-10-23T22:00:00.000Z"
     },
     {
       id: "evt-004",
@@ -170,7 +192,52 @@ const DEFAULT_SEED = {
       checkpoint_note: "Actualización de ruta desde Bogotá hacia Cali.",
       source: "carrier_webhook",
       signature_verified: true,
-      created_at: "2026-10-23T23:30:00.000Z"
+      created_at: "2026-10-24T00:00:00.000Z"
+    },
+    {
+      id: "evt-20501-1",
+      order_id: "MC-20501",
+      tracking_number: "MCX-908201",
+      status: "Confirmado",
+      location: "Carrera 6 #16D-50, Terminal de Transportes de Pasto, Pasto",
+      checkpoint_note: "Origen del pedido demo desde la Terminal de Transportes de Pasto.",
+      source: "system_event",
+      signature_verified: true,
+      created_at: "2026-10-23T22:30:00.000Z"
+    },
+    {
+      id: "evt-20501-2",
+      order_id: "MC-20501",
+      tracking_number: "MCX-908201",
+      status: "Preparado",
+      location: "Terminal de Transportes de Pasto, Pasto",
+      checkpoint_note: "Pedido preparado para despacho hacia Cali.",
+      source: "manual",
+      signature_verified: true,
+      created_at: "2026-10-23T22:45:00.000Z"
+    },
+    {
+      id: "evt-20501-3",
+      order_id: "MC-20501",
+      tracking_number: "MCX-908201",
+      status: "En tránsito",
+      location: "Carrera 6 #16D-50, Terminal de Transportes de Pasto, Pasto",
+      checkpoint_note: "Despacho hacia Cali. Estimación por carretera OSRM: 8 h 1 min, 461,5 km; sin tráfico en vivo.",
+      raw_payload: { route_duration_seconds: 28876, route_distance_meters: 461536, route_provider: "OSRM / OpenStreetMap" },
+      source: "carrier_webhook",
+      signature_verified: true,
+      created_at: "2026-10-23T23:00:00.000Z"
+    },
+    {
+      id: "evt-20501-4",
+      order_id: "MC-20501",
+      tracking_number: "MCX-908201",
+      status: "En tránsito",
+      location: "Pasto · en ruta hacia Cali",
+      checkpoint_note: "Actualización de ruta del pedido demo.",
+      source: "carrier_webhook",
+      signature_verified: true,
+      created_at: "2026-10-24T00:15:00.000Z"
     },
     {
       id: "evt-101",
@@ -229,6 +296,20 @@ const DEFAULT_SEED = {
       order_id: "MC-20481",
       seller_id: "seller-901",
       retained_amount: 320000.00,
+      status: "AWAITING_DELIVERY",
+      retention_started_at: null,
+      auto_release_at: null,
+      released_at: null,
+      dispute_id: null,
+      dispute_reason: null,
+      dispute_registered_at: null,
+      accounting_notified: false
+    },
+    {
+      id: "esc-004",
+      order_id: "MC-20501",
+      seller_id: "seller-330",
+      retained_amount: 245000,
       status: "AWAITING_DELIVERY",
       retention_started_at: null,
       auto_release_at: null,
