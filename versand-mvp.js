@@ -11,13 +11,14 @@ const DEFAULT_ORDERS = [
     customer: "Laura Gómez",
     carrier: "Mercado Express",
     product: "Audífonos inalámbricos",
-    status: "En reparto",
-    destination: "Bogotá, Colombia",
-    address: "Cra. 6 #15-88, Museo del Oro, Bogotá",
-    createdAt: "2026-10-06T09:42:00Z",
-    dispatchedAt: "2026-10-07T07:25:00Z",
+    status: "En tránsito",
+    destination: "Cali, Colombia",
+    address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
+    createdAt: "2026-10-23T12:00:00Z",
+    dispatchedAt: "2026-10-23T14:00:00Z",
+    estimatedDeliveryAt: "2026-10-24T14:00:00Z",
     transitHours: 24,
-    lastLocation: "Centro Internacional, Bogotá",
+    lastLocation: "Bogotá · en ruta hacia Cali",
     updated: "Hace 8 min"
   },
   {
@@ -43,13 +44,13 @@ const DEFAULT_ORDERS = [
     carrier: "Mercado Express",
     product: "Kit de café artesanal",
     status: "Entregado",
-    destination: "Bogotá, Colombia",
-    address: "Carrera 7 #28-66, Museo Nacional, Bogotá",
+    destination: "Cali, Colombia",
+    address: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
     createdAt: "2026-09-30T11:00:00Z",
     dispatchedAt: "2026-10-01T09:00:00Z",
     deliveredAt: "2 oct 2026 · 4:18 PM",
     transitHours: 24,
-    lastLocation: "Bogotá, Colombia",
+    lastLocation: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
     updated: "2 oct 2026"
   },
   {
@@ -609,6 +610,10 @@ async function openOrderDetail(orderId = "MC-20481") {
   const eta = calculateEstimatedDelivery(order);
   const origin = events.find((event) => event.status === "Confirmado")?.location || DEMO_ORIGINS[order.id] || "Origen pendiente de confirmación";
   const destination = [order.address, order.destination].filter(Boolean).join(", ");
+  const departureEvent = events.find((event) => event.status === "En tránsito");
+  const departureLabel = departureEvent?.created_at
+    ? new Date(departureEvent.created_at).toLocaleString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : order.dispatchedAt ? new Date(order.dispatchedAt).toLocaleString("es-CO") : "Pendiente";
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
   const timelineSteps = buildDynamicTimeline(order, events);
   const isDelivered = order.status === "Entregado";
@@ -695,6 +700,7 @@ async function openOrderDetail(orderId = "MC-20481") {
               <div class="route-point"><span class="route-marker route-current"></span><div><small>Última ubicación · ${escapeHtml(order.status)}</small><strong>${escapeHtml(order.lastLocation || "Ubicación pendiente")}</strong></div></div>
               <div class="route-connector"><span></span></div>
               <div class="route-point"><span class="route-marker route-destination"></span><div><small>Entrega en</small><strong>${escapeHtml(destination || "Dirección pendiente")}</strong></div></div>
+              <div class="route-footer"><span>Fecha de salida</span><strong>${escapeHtml(departureLabel)}</strong></div>
               <div class="route-footer"><span>ETA estimada</span><strong>${escapeHtml(order.estimatedDelivery || eta)}</strong></div>
               <a class="btn btn-soft route-directions" href="${escapeHtml(directionsUrl)}" target="_blank" rel="noopener noreferrer">Ver ruta en Google Maps ↗</a>
               <small class="route-disclaimer">Direcciones públicas para demostración; no representan domicilios de clientes ni una ruta GPS en tiempo real.</small>

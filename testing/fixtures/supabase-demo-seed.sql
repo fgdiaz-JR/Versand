@@ -13,8 +13,8 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Actualiza únicamente pedidos de demostración existentes para que el mapa
 -- use direcciones públicas colombianas, verificables y reconocibles.
-UPDATE public.orders SET destination_address='Cra. 6 #15-88, Museo del Oro, Bogotá', destination_city='Bogotá, Colombia', last_location='Centro Internacional, Bogotá' WHERE id='MC-20481';
-UPDATE public.orders SET destination_address='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', destination_city='Bogotá, Colombia', last_location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá' WHERE id='MC-20397';
+UPDATE public.orders SET destination_address='Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali', destination_city='Cali, Colombia', status='En tránsito', sla_hours=24, estimated_delivery_at='2026-10-24 09:00:00-05', delivered_at=NULL, last_location='Bogotá · en ruta hacia Cali', created_at='2026-10-23 07:00:00-05', updated_at=NOW() WHERE id='MC-20481';
+UPDATE public.orders SET destination_address='Carrera 5 #6-05, Centro Cultural de Cali, Cali', destination_city='Cali, Colombia', last_location='Carrera 5 #6-05, Centro Cultural de Cali, Cali' WHERE id='MC-20397';
 UPDATE public.orders SET destination_address='Carrera 52 #52-43, Museo de Antioquia, Medellín', destination_city='Medellín, Colombia' WHERE id='MC-20479';
 UPDATE public.orders SET destination_address='Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali', destination_city='Cali, Colombia' WHERE id='MC-20463';
 
@@ -34,9 +34,12 @@ VALUES
  ,('MC-20480',NULL,'Confirmado','Checkout demo','Pago sintético confirmado; pedido listo para asignación de guía.','system_event',TRUE,'demo:MC-20480:1',NOW()-INTERVAL '2 hours')
 ON CONFLICT (idempotency_key) DO NOTHING;
 
-UPDATE public.tracking_events SET location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', checkpoint_note='Origen de ruta de demostración; dirección pública del Museo Nacional de Colombia.' WHERE idempotency_key='demo:MC-20481:1';
+UPDATE public.tracking_events SET location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', checkpoint_note='Origen de ruta de demostración; salida hacia Cali.', created_at='2026-10-23 07:00:00-05' WHERE idempotency_key='demo:MC-20481:1';
 UPDATE public.tracking_events SET location='Cra. 6 #15-88, Museo del Oro, Bogotá', checkpoint_note='Origen de ruta de demostración; dirección pública del Museo del Oro.' WHERE idempotency_key='demo:MC-20397:1';
-UPDATE public.tracking_events SET location='Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá', checkpoint_note='Entrega sintética en dirección pública del Museo Nacional de Colombia.' WHERE idempotency_key='demo:MC-20397:5';
+UPDATE public.tracking_events SET created_at='2026-10-23 08:00:00-05' WHERE idempotency_key='demo:MC-20481:2';
+UPDATE public.tracking_events SET location='Hub Regional Fontibón, Bogotá', checkpoint_note='Despachado desde Bogotá hacia Cali.', created_at='2026-10-23 09:00:00-05' WHERE idempotency_key='demo:MC-20481:3';
+UPDATE public.tracking_events SET status='En tránsito', location='Bogotá · en ruta hacia Cali', checkpoint_note='Actualización de ruta desde Bogotá hacia Cali.', created_at='2026-10-23 18:30:00-05' WHERE idempotency_key='demo:MC-20481:4';
+UPDATE public.tracking_events SET location='Carrera 5 #6-05, Centro Cultural de Cali, Cali', checkpoint_note='Entrega sintética en dirección pública del Centro Cultural de Cali.' WHERE idempotency_key='demo:MC-20397:5';
 
 INSERT INTO public.escrow_vault(order_id,seller_id,retained_amount,status,retention_started_at,auto_release_at,released_at,dispute_id,dispute_reason,dispute_registered_at,accounting_notified)
 VALUES

@@ -48,16 +48,16 @@ const DEFAULT_SEED = {
       customer_phone: "+573105550192",
       customer_email: "laura.gomez@versand.co",
       seller_id: "seller-901",
-      destination_city: "Bogotá, Colombia",
-      destination_address: "Cra. 6 #15-88, Museo del Oro, Bogotá",
+      destination_city: "Cali, Colombia",
+      destination_address: "Carrera 1 #5-105 Oeste, Museo La Tertulia, Cali",
       product_name: "Audífonos inalámbricos con cancelación activa",
       total_amount: 320000.00,
-      status: "En reparto",
+      status: "En tránsito",
       sla_hours: 24,
-      estimated_delivery_at: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+      estimated_delivery_at: "2026-10-24T14:00:00.000Z",
       delivered_at: null,
-      last_location: "Centro Internacional, Bogotá",
-      created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+      last_location: "Bogotá · en ruta hacia Cali",
+      created_at: "2026-10-23T12:00:00.000Z",
       updated_at: new Date(Date.now() - 45 * 60 * 1000).toISOString()
     },
     {
@@ -70,15 +70,15 @@ const DEFAULT_SEED = {
       customer_phone: "+573105550192",
       customer_email: "laura.gomez@versand.co",
       seller_id: "seller-504",
-      destination_city: "Bogotá, Colombia",
-      destination_address: "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
+      destination_city: "Cali, Colombia",
+      destination_address: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
       product_name: "Kit de café artesanal colombiano de origen",
       total_amount: 185000.00,
       status: "Entregado",
       sla_hours: 24,
       estimated_delivery_at: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
       delivered_at: new Date(Date.now() - 20 * 3600 * 1000).toISOString(),
-      last_location: "Calle 127 # 19-45, Bogotá",
+      last_location: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
       created_at: new Date(Date.now() - 72 * 3600 * 1000).toISOString(),
       updated_at: new Date(Date.now() - 20 * 3600 * 1000).toISOString()
     },
@@ -137,7 +137,7 @@ const DEFAULT_SEED = {
       checkpoint_note: "Origen de ruta de demostración; dirección pública del Museo Nacional de Colombia.",
       source: "system_event",
       signature_verified: true,
-      created_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+      created_at: "2026-10-23T12:00:00.000Z"
     },
     {
       id: "evt-002",
@@ -148,7 +148,7 @@ const DEFAULT_SEED = {
       checkpoint_note: "Etiqueta generada e impresa en menos de 2s. Rotulado oficial (Equipo 1)",
       source: "manual",
       signature_verified: true,
-      created_at: new Date(Date.now() - 18 * 3600 * 1000).toISOString()
+      created_at: "2026-10-23T13:00:00.000Z"
     },
     {
       id: "evt-003",
@@ -159,18 +159,18 @@ const DEFAULT_SEED = {
       checkpoint_note: "Despachado en camión hacia estación local",
       source: "carrier_webhook",
       signature_verified: true,
-      created_at: new Date(Date.now() - 8 * 3600 * 1000).toISOString()
+      created_at: "2026-10-23T14:00:00.000Z"
     },
     {
       id: "evt-004",
       order_id: "MC-20481",
       tracking_number: "MCX-908172",
-      status: "En reparto",
-      location: "Centro Internacional, Bogotá",
-      checkpoint_note: "Asignado a mensajero express en ruta de última milla",
+      status: "En tránsito",
+      location: "Bogotá · en ruta hacia Cali",
+      checkpoint_note: "Actualización de ruta desde Bogotá hacia Cali.",
       source: "carrier_webhook",
       signature_verified: true,
-      created_at: new Date(Date.now() - 45 * 60 * 1000).toISOString()
+      created_at: "2026-10-23T23:30:00.000Z"
     },
     {
       id: "evt-101",
@@ -188,7 +188,7 @@ const DEFAULT_SEED = {
       order_id: "MC-20397",
       tracking_number: "MCX-907441",
       status: "Entregado",
-      location: "Carrera 7 #28-66, Museo Nacional de Colombia, Bogotá",
+      location: "Carrera 5 #6-05, Centro Cultural de Cali, Cali",
       checkpoint_note: "Recibido por Laura Gómez a satisfacción. Evidencia fotográfica y GPS capturada.",
       source: "carrier_webhook",
       signature_verified: true,
